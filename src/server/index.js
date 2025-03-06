@@ -1,17 +1,21 @@
 import express from 'express';
 import { Pool } from 'pg';
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
 import path from 'path';
 
 const app = express();
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
 });
 
-const openai = new OpenAIApi(new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
-}));
+});
 
 const PORT = process.env.PORT || 3000;
 
