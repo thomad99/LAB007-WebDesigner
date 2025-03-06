@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/server/index.js",
-    "build": "cd client && npm install && npm run build",
+    "build": "npm install",
     "dev": "nodemon src/server/index.js",
     "setup-db": "node src/scripts/setup-db.js"
   },
