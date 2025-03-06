@@ -1,0 +1,14 @@
+{
+  "name": "lab007-website-cloner",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "build": "cd client && npm install && npm run build",
+    "dev": "nodemon src/server/index.js",
+    "setup-db": "node src/scripts/setup-db.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

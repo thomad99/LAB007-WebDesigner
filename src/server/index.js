@@ -2,6 +2,7 @@ import express from 'express';
 import { Pool } from 'pg';
 import { Configuration, OpenAIApi } from 'openai';
 import nodemailer from 'nodemailer';
+import path from 'path';
 
 const app = express();
 const pool = new Pool({
@@ -11,6 +12,23 @@ const pool = new Pool({
 const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY
 }));
+
+const PORT = process.env.PORT || 3000;
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static('client/build'));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/build', 'index.html'));
+  });
+}
 
 app.post('/api/clone-website', async (req, res) => {
   const { website, email, theme, businessType } = req.body;
@@ -68,4 +86,8 @@ async function processWebsite(jobId, website, email, theme, businessType) {
   } catch (error) {
     await updateJobStatus(jobId, 'error: ' + error.message);
   }
-} 
+}
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+}); 
