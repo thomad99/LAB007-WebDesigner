@@ -1,8 +1,12 @@
 import express from 'express';
-import { Pool } from 'pg';
+import pkg from 'pg';
+const { Pool } = pkg;
 import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const pool = new Pool({
