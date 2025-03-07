@@ -146,12 +146,84 @@ async function processWebsite(jobId, website, email, theme, businessType) {
   }
 }
 
-// Update the status endpoint to return more information
+// Add this new endpoint for image mockup
+app.post('/api/create-mockup', async (req, res) => {
+  try {
+    const { website, theme, businessType } = req.body;
+    const jobId = uuidv4();
+
+    // Store job in database
+    await pool.query(
+      'INSERT INTO jobs (id, website, theme, business_type, status, job_type) VALUES ($1, $2, $3, $4, $5, $6)',
+      [jobId, website, theme, businessType, 'generating', 'mockup']
+    );
+
+    // Start the mockup process asynchronously
+    createMockup(jobId, website, theme, businessType);
+
+    res.json({ 
+      message: 'Mockup generation started', 
+      jobId 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function createMockup(jobId, website, theme, businessType) {
+  try {
+    // 1. Scrape website content for context
+    const { data } = await axios.get(website);
+    const $ = cheerio.load(data);
+    
+    const content = {
+      title: $('title').text(),
+      description: $('meta[name="description"]').attr('content'),
+      headings: $('h1, h2, h3').map((i, el) => $(el).text()).get().slice(0, 3)
+    };
+
+    // 2. Generate image using DALL-E
+    const prompt = `Create a modern, professional website mockup for a ${businessType} with a ${theme} theme. 
+    The website is about: ${content.title}. 
+    Key elements to include:
+    - Clean, ${theme} color scheme
+    - Modern navigation menu
+    - Mobile-friendly design
+    - Professional layout for a ${businessType}
+    - Key headings: ${content.headings.join(', ')}
+    Make it look like a professional website screenshot.`;
+
+    const image = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt,
+      size: "1792x1024",
+      quality: "standard",
+      n: 1,
+    });
+
+    const imageUrl = image.data[0].url;
+
+    // 3. Store the result
+    await pool.query(
+      'UPDATE jobs SET status = $1, mockup_url = $2 WHERE id = $3',
+      ['completed', imageUrl, jobId]
+    );
+
+  } catch (error) {
+    console.error('Error generating mockup:', error);
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      [`error: ${error.message}`, jobId]
+    );
+  }
+}
+
+// Update the status endpoint to handle both types
 app.get('/api/status/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
     const result = await pool.query(
-      'SELECT status, demo_urls FROM jobs WHERE id = $1',
+      'SELECT status, demo_urls, mockup_url, job_type FROM jobs WHERE id = $1',
       [jobId]
     );
     
@@ -163,14 +235,16 @@ app.get('/api/status/:jobId', async (req, res) => {
     const job = result.rows[0];
     res.json({
       status: job.status,
-      demoUrls: job.demo_urls
+      jobType: job.job_type,
+      demoUrls: job.demo_urls,
+      mockupUrl: job.mockup_url
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Root route - Landing page
+// Update the root route with new UI
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -225,11 +299,53 @@ app.get('/', (req, res) => {
           .status-active {
             display: block !important;
           }
+          .option-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+          }
+          
+          .option-button {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            cursor: pointer;
+            border-radius: 4px;
+          }
+          
+          .option-button.active {
+            background: #007bff;
+            color: white;
+          }
+          
+          .mockup-result {
+            margin-top: 2rem;
+            text-align: center;
+          }
+          
+          .mockup-result img {
+            max-width: 100%;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          }
         </style>
         <script>
           document.addEventListener('DOMContentLoaded', function() {
             const form = document.querySelector('form');
             const statusBox = document.getElementById('status-box');
+            const optionButtons = document.querySelectorAll('.option-button');
+            let selectedOption = 'clone'; // Default option
+
+            optionButtons.forEach(button => {
+              button.addEventListener('click', () => {
+                optionButtons.forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                selectedOption = button.dataset.option;
+              });
+            });
 
             form.addEventListener('submit', async function(e) {
               e.preventDefault();
@@ -244,7 +360,8 @@ app.get('/', (req, res) => {
               };
 
               try {
-                const response = await fetch('/api/clone-website', {
+                const endpoint = selectedOption === 'clone' ? '/api/clone-website' : '/api/create-mockup';
+                const response = await fetch(endpoint, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json'
@@ -252,10 +369,7 @@ app.get('/', (req, res) => {
                   body: JSON.stringify(formData)
                 });
                 const data = await response.json();
-                
-                // Start polling for status updates
-                const jobId = data.jobId;
-                pollStatus(jobId);
+                pollStatus(data.jobId);
               } catch (error) {
                 statusBox.innerHTML = '<p>Error: ' + error.message + '</p>';
               }
@@ -269,11 +383,15 @@ app.get('/', (req, res) => {
                 
                 if (data.status !== 'completed' && data.status !== 'error') {
                   setTimeout(() => pollStatus(jobId), 2000);
-                }
-                if (data.demoUrls) {
-                  statusBox.innerHTML += '<p>Demo URLs:</p><ul>' + 
-                    data.demoUrls.map(url => '<li><a href="' + url + '">' + url + '</a></li>').join('') +
-                    '</ul>';
+                } else if (data.status === 'completed') {
+                  if (data.mockupUrl) {
+                    statusBox.innerHTML += '<div class="mockup-result"><h3>Your Website Mockup:</h3>' +
+                      '<img src="' + data.mockupUrl + '" alt="Website Mockup"></div>';
+                  } else if (data.demoUrls) {
+                    statusBox.innerHTML += '<p>Demo URLs:</p><ul>' + 
+                      data.demoUrls.map(url => '<li><a href="' + url + '">' + url + '</a></li>').join('') +
+                      '</ul>';
+                  }
                 }
               } catch (error) {
                 statusBox.innerHTML = '<p>Error checking status: ' + error.message + '</p>';
@@ -284,6 +402,12 @@ app.get('/', (req, res) => {
       </head>
       <body>
         <h1>LAB007 AI Website Cloner</h1>
+        
+        <div class="option-buttons">
+          <button type="button" class="option-button active" data-option="clone">Full Site Clone</button>
+          <button type="button" class="option-button" data-option="mockup">Quick Image Mockup</button>
+        </div>
+
         <form>
           <label for="website">Your Current Website:</label>
           <input type="url" id="website" name="website" required placeholder="https://example.com">
