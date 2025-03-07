@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import axios from 'axios';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
