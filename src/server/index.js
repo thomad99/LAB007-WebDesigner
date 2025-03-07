@@ -55,6 +55,67 @@ app.get('/api/status/:jobId', async (req, res) => {
   }
 });
 
+// Root route - Landing page
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>LAB007 AI Website Cloner</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+          }
+          h1 {
+            text-align: center;
+            color: #333;
+          }
+          form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+          }
+          label {
+            font-weight: bold;
+          }
+          input, select {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>LAB007 AI Website Cloner</h1>
+        <form>
+          <label for="website">Website URL:</label>
+          <input type="text" id="website" name="website" required>
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required>
+          <label for="theme">Theme:</label>
+          <select id="theme" name="theme" required>
+            <option value="">Select a theme</option>
+            <option value="modern">Modern</option>
+            <option value="classic">Classic</option>
+            <option value="minimalist">Minimalist</option>
+          </select>
+          <label for="businessType">Business Type:</label>
+          <select id="businessType" name="businessType" required>
+            <option value="">Select a business type</option>
+            <option value="ecommerce">E-commerce</option>
+            <option value="blog">Blog</option>
+            <option value="portfolio">Portfolio</option>
+          </select>
+          <button type="submit">Clone Website</button>
+        </form>
+      </body>
+    </html>
+  `);
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
