@@ -172,13 +172,25 @@ app.post('/api/create-mockup', async (req, res) => {
 
 async function createMockup(jobId, website, theme, businessType) {
   try {
+    // Update initial status
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      ['scraping', jobId]
+    );
+
     // 1. Scrape website content for context
     const { data } = await axios.get(website);
     const $ = cheerio.load(data);
     
+    // Update status to generating
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      ['generating', jobId]
+    );
+    
     const content = {
-      title: $('title').text(),
-      description: $('meta[name="description"]').attr('content'),
+      title: $('title').text() || 'Website',
+      description: $('meta[name="description"]').attr('content') || '',
       headings: $('h1, h2, h3').map((i, el) => $(el).text()).get().slice(0, 3)
     };
 
@@ -353,7 +365,7 @@ app.get('/', (req, res) => {
               statusBox.innerHTML = '<p>Starting process...</p>';
 
               const formData = {
-                website: form.website.value,
+                website: normalizeUrl(form.website.value),
                 email: form.email.value,
                 theme: form.theme.value,
                 businessType: form.businessType.value
@@ -369,6 +381,9 @@ app.get('/', (req, res) => {
                   body: JSON.stringify(formData)
                 });
                 const data = await response.json();
+                if (data.error) {
+                  throw new Error(data.error);
+                }
                 pollStatus(data.jobId);
               } catch (error) {
                 statusBox.innerHTML = '<p>Error: ' + error.message + '</p>';
@@ -379,9 +394,16 @@ app.get('/', (req, res) => {
               try {
                 const response = await fetch('/api/status/' + jobId);
                 const data = await response.json();
-                statusBox.innerHTML = '<p>Status: ' + data.status + '</p>';
                 
-                if (data.status !== 'completed' && data.status !== 'error') {
+                if (data.error) {
+                  statusBox.innerHTML = '<p>Error: ' + data.error + '</p>';
+                  return;
+                }
+
+                // Show current status
+                statusBox.innerHTML = '<p>Status: ' + (data.status || 'Processing...') + '</p>';
+                
+                if (data.status && !data.status.startsWith('error') && data.status !== 'completed') {
                   setTimeout(() => pollStatus(jobId), 2000);
                 } else if (data.status === 'completed') {
                   if (data.mockupUrl) {
@@ -444,6 +466,15 @@ app.get('/', (req, res) => {
     </html>
   `);
 });
+
+// Add this function near the top with other functions
+function normalizeUrl(url) {
+  if (!url) return url;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return 'https://' + url;
+  }
+  return url;
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
