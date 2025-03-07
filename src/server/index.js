@@ -3,12 +3,19 @@ import pkg from 'pg';
 const { Pool } = pkg;
 import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
-import path from 'path';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Create __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -30,11 +37,12 @@ app.get('/health', (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('client/build'));
+  const clientBuildPath = join(__dirname, '../../client/build');
+  app.use(express.static(clientBuildPath));
   
   // Handle React routing, return all requests to React app
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/build', 'index.html'));
+    res.sendFile(join(clientBuildPath, 'index.html'));
   });
 }
 
