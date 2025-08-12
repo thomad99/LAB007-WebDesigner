@@ -142,34 +142,30 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     console.log('Step 2: Starting AI design generation...');
     console.log('Building AI prompt...');
     
-    const prompt = `You are a professional web designer tasked with redesigning a website. 
-
-ORIGINAL WEBSITE CONTENT:
-- Title: ${content.title}
-- Description: ${content.description}
-- Business Type: ${businessType}
-- Theme: ${theme}
-
-CONTENT TO PRESERVE AND IMPROVE:
-- Main headings: ${content.headings.map(h => `${h.level}: ${h.text}`).join(', ')}
-- Key paragraphs: ${content.paragraphs.slice(0, 5).join(' | ')}
-- Navigation items: ${content.navigation.join(', ')}
-- Contact information: ${content.contactInfo.join(', ')}
-- Social links: ${content.socialLinks.join(', ')}
-
-REQUIREMENTS:
-1. Create a modern, mobile-first responsive design
-2. Use a ${theme} color scheme and aesthetic
-3. Preserve ALL original content and structure
-4. Improve typography, spacing, and visual hierarchy
-5. Add modern UI elements (cards, gradients, shadows)
-6. Ensure the design fits a ${businessType} business
-7. Include proper meta tags and SEO optimization
-8. Make it fully responsive for all devices
-9. Use modern CSS (Grid, Flexbox, CSS variables)
-10. Add subtle animations and hover effects
-
-Generate complete, production-ready HTML/CSS code that can be immediately used.`;
+    const prompt = 'You are a professional web designer tasked with redesigning a website.\n\n' +
+      'ORIGINAL WEBSITE CONTENT:\n' +
+      '- Title: ' + content.title + '\n' +
+      '- Description: ' + content.description + '\n' +
+      '- Business Type: ' + businessType + '\n' +
+      '- Theme: ' + theme + '\n\n' +
+      'CONTENT TO PRESERVE AND IMPROVE:\n' +
+      '- Main headings: ' + content.headings.map(function(h) { return h.level + ': ' + h.text; }).join(', ') + '\n' +
+      '- Key paragraphs: ' + content.paragraphs.slice(0, 5).join(' | ') + '\n' +
+      '- Navigation items: ' + content.navigation.join(', ') + '\n' +
+      '- Contact information: ' + content.contactInfo.join(', ') + '\n' +
+      '- Social links: ' + content.socialLinks.join(', ') + '\n\n' +
+      'REQUIREMENTS:\n' +
+      '1. Create a modern, mobile-first responsive design\n' +
+      '2. Use a ' + theme + ' color scheme and aesthetic\n' +
+      '3. Preserve ALL original content and structure\n' +
+      '4. Improve typography, spacing, and visual hierarchy\n' +
+      '5. Add modern UI elements (cards, gradients, shadows)\n' +
+      '6. Ensure the design fits a ' + businessType + ' business\n' +
+      '7. Include proper meta tags and SEO optimization\n' +
+      '8. Make it fully responsive for all devices\n' +
+      '9. Use modern CSS (Grid, Flexbox, CSS variables)\n' +
+      '10. Add subtle animations and hover effects\n\n' +
+      'Generate complete, production-ready HTML/CSS code that can be immediately used.';
 
     console.log('AI Prompt built successfully');
     console.log('Calling OpenAI API...');
@@ -224,25 +220,23 @@ Generate complete, production-ready HTML/CSS code that can be immediately used.`
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'Your Website Redesign is Ready! 🎨',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #333;">🎉 Your Website Redesign is Complete!</h1>
-            <p>We've successfully redesigned your website with a modern, ${theme} aesthetic that's perfect for your ${businessType} business.</p>
-            <p><strong>What's new:</strong></p>
-            <ul>
-              <li>✨ Modern, responsive design</li>
-              <li>📱 Mobile-first approach</li>
-              <li>🎨 ${theme} color scheme</li>
-              <li>🚀 Improved user experience</li>
-              <li>📝 All your original content preserved</li>
-            </ul>
-            <div style="text-align: center; margin: 2rem 0;">
-              <a href="${demoUrl}" style="background: #007bff; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 5px; display: inline-block;">View Your New Design</a>
-            </div>
-            <p><em>Your redesigned website is ready to use!</em></p>
-          </div>
-        `
+        subject: 'Your Website Redesign is Ready!',
+        html: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">' +
+          '<h1 style="color: #333;">Your Website Redesign is Complete!</h1>' +
+          '<p>We have successfully redesigned your website with a modern, ' + theme + ' aesthetic that is perfect for your ' + businessType + ' business.</p>' +
+          '<p><strong>What is new:</strong></p>' +
+          '<ul>' +
+          '<li>Modern, responsive design</li>' +
+          '<li>Mobile-first approach</li>' +
+          '<li>' + theme + ' color scheme</li>' +
+          '<li>Improved user experience</li>' +
+          '<li>All your original content preserved</li>' +
+          '</ul>' +
+          '<div style="text-align: center; margin: 2rem 0;">' +
+          '<a href="' + demoUrl + '" style="background: #007bff; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 5px; display: inline-block;">View Your New Design</a>' +
+          '</div>' +
+          '<p><em>Your redesigned website is ready to use!</em></p>' +
+          '</div>'
       });
       console.log('Email sent successfully');
     } else {
@@ -338,7 +332,7 @@ function extractSocialLinks($) {
     const href = $(el).attr('href');
     const text = $(el).text().trim();
     if (href && text) {
-      socialLinks.push(`${text}: ${href}`);
+      socialLinks.push(text + ': ' + href);
     }
   });
   return socialLinks;
@@ -443,33 +437,29 @@ async function createMockup(jobId, website, theme, businessType) {
     console.log('Step 2: Starting DALL-E image generation...');
     console.log('Building DALL-E prompt...');
     
-    const prompt = `Create a professional, modern website mockup for a ${businessType} business with a ${theme} theme.
-
-BUSINESS CONTEXT:
-- Business Type: ${businessType}
-- Theme: ${theme}
-- Website Title: ${content.title}
-- Description: ${content.description}
-
-CONTENT TO INCLUDE:
-- Main headings: ${content.headings.join(', ')}
-- Key content: ${content.paragraphs.join(' | ')}
-- Navigation menu: ${content.navigation.join(', ')}
-- Contact info: ${content.contactInfo.join(', ')}
-- Social links: ${content.socialLinks.join(', ')}
-
-DESIGN REQUIREMENTS:
-- Modern, professional ${theme} aesthetic
-- Clean, responsive layout
-- Professional typography and spacing
-- ${theme} color scheme throughout
-- Mobile-friendly design elements
-- Professional business appearance
-- Include realistic content placement
-- Show navigation, hero section, content areas
-- Make it look like a real, professional website screenshot
-
-Style: Professional website mockup, clean design, modern UI, business-appropriate, realistic content placement`;
+    const prompt = 'Create a professional, modern website mockup for a ' + businessType + ' business with a ' + theme + ' theme.\n\n' +
+      'BUSINESS CONTEXT:\n' +
+      '- Business Type: ' + businessType + '\n' +
+      '- Theme: ' + theme + '\n' +
+      '- Website Title: ' + content.title + '\n' +
+      '- Description: ' + content.description + '\n\n' +
+      'CONTENT TO INCLUDE:\n' +
+      '- Main headings: ' + content.headings.join(', ') + '\n' +
+      '- Key content: ' + content.paragraphs.join(' | ') + '\n' +
+      '- Navigation menu: ' + content.navigation.join(', ') + '\n' +
+      '- Contact info: ' + content.contactInfo.join(', ') + '\n' +
+      '- Social links: ' + content.socialLinks.join(', ') + '\n\n' +
+      'DESIGN REQUIREMENTS:\n' +
+      '- Modern, professional ' + theme + ' aesthetic\n' +
+      '- Clean, responsive layout\n' +
+      '- Professional typography and spacing\n' +
+      '- ' + theme + ' color scheme throughout\n' +
+      '- Mobile-friendly design elements\n' +
+      '- Professional business appearance\n' +
+      '- Include realistic content placement\n' +
+      '- Show navigation, hero section, content areas\n' +
+      '- Make it look like a real, professional website screenshot\n\n' +
+      'Style: Professional website mockup, clean design, modern UI, business-appropriate, realistic content placement';
 
     console.log('DALL-E prompt built successfully');
     console.log(`Prompt length: ${prompt.length} characters`);
@@ -1123,30 +1113,20 @@ app.get('/', (req, res) => {
                 }
                 
                 // Display analysis results
-                analysisContent.innerHTML = `
-                  <div class="analysis-item">
-                    <strong>Title:</strong> ${data.title || 'Not found'}
-                  </div>
-                  <div class="analysis-item">
-                    <strong>Description:</strong> ${data.description || 'Not found'}
-                  </div>
-                  <div class="analysis-item">
-                    <strong>Estimated Business Type:</strong> ${data.estimatedBusinessType}
-                  </div>
-                  <div class="analysis-item">
-                    <strong>Suggested Themes:</strong>
-                    <div class="suggestions">
-                      ${data.suggestedThemes.map(theme => 
-                        `<span class="suggestion-tag" onclick="selectTheme('${theme}')">${theme}</span>`
-                      ).join('')}
-                    </div>
-                  </div>
-                  ${data.logo ? `
-                    <div class="analysis-item">
-                      <strong>Logo Found:</strong> ✅
-                    </div>
-                  ` : ''}
-                `;
+                analysisContent.innerHTML = '<div class="analysis-item">' +
+                  '<strong>Title:</strong> ' + (data.title || 'Not found') + '</div>' +
+                  '<div class="analysis-item">' +
+                  '<strong>Description:</strong> ' + (data.description || 'Not found') + '</div>' +
+                  '<div class="analysis-item">' +
+                  '<strong>Estimated Business Type:</strong> ' + data.estimatedBusinessType + '</div>' +
+                  '<div class="analysis-item">' +
+                  '<strong>Suggested Themes:</strong>' +
+                  '<div class="suggestions">' +
+                  data.suggestedThemes.map(function(theme) {
+                    return '<span class="suggestion-tag" onclick="selectTheme(\'' + theme + '\')">' + theme + '</span>';
+                  }).join('') +
+                  '</div></div>' +
+                  (data.logo ? '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>' : '');
                 
                 analysisResults.style.display = 'block';
                 
@@ -1464,14 +1444,13 @@ app.get('/demo/:jobId', async (req, res) => {
           }
         </style>`
     ).replace(
-      '<body>',
-      `<body>
-        <div class="demo-header">
-          <h1>AI-Redesigned Website</h1>
-          <p>This is an AI-generated redesign of <a href="${originalWebsite}" target="_blank">${originalWebsite}</a></p>
-          <p>All original content has been preserved and enhanced with modern design</p>
-        </div>
-      `);
+              '<body>' +
+        '<div class="demo-header">' +
+          '<h1>AI-Redesigned Website</h1>' +
+          '<p>This is an AI-generated redesign of <a href="' + originalWebsite + '" target="_blank">' + originalWebsite + '</a></p>' +
+          '<p>All original content has been preserved and enhanced with modern design</p>' +
+          '</div>'
+      );
     
     // Serve the enhanced HTML
     res.send(enhancedHtml);
