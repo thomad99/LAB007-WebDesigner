@@ -10,7 +10,7 @@ git add .
 $changes = git status --porcelain
 
 if ($changes) {
-    Write-Output "🔄 Files to be committed:"
+    Write-Output "Files to be committed:"
     $changes
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
