@@ -9,7 +9,10 @@ CREATE TABLE IF NOT EXISTS jobs (
   theme VARCHAR(50) NOT NULL,
   business_type VARCHAR(50) NOT NULL,
   status TEXT NOT NULL,
+  job_type VARCHAR(50) DEFAULT 'clone',
   demo_urls JSONB,
+  mockup_url TEXT,
+  generated_html TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

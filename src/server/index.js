@@ -35,61 +35,61 @@ app.get('/health', (req, res) => {
 // API endpoint for website cloning
 app.post('/api/clone-website', async (req, res) => {
   try {
-    console.log('🚀 Starting website redesign process...');
-    console.log('📝 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Starting website redesign process...');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
     
     const { website, email, theme, businessType } = req.body;
     const jobId = uuidv4();
     
-    console.log(`🆔 Generated job ID: ${jobId}`);
-    console.log(`🌐 Website: ${website}`);
-    console.log(`📧 Email: ${email || 'Not provided'}`);
-    console.log(`🎨 Theme: ${theme}`);
-    console.log(`🏢 Business Type: ${businessType}`);
+    console.log('Generated job ID:', jobId);
+    console.log('Website:', website);
+    console.log('Email:', email || 'Not provided');
+    console.log('Theme:', theme);
+    console.log('Business Type:', businessType);
 
     // Store job in database
-    console.log('💾 Storing job in database...');
+    console.log('Storing job in database...');
     await pool.query(
       'INSERT INTO jobs (id, website, email, theme, business_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
       [jobId, website, email, theme, businessType, 'scraping']
     );
-    console.log('✅ Job stored in database successfully');
+    console.log('Job stored in database successfully');
 
     // Start the process asynchronously
-    console.log('🔄 Starting async website processing...');
+    console.log('Starting async website processing...');
     processWebsite(jobId, website, email, theme, businessType);
 
-    console.log('📤 Sending response to client...');
+    console.log('Sending response to client...');
     res.json({ 
       message: 'Job started', 
       jobId
     });
-    console.log('✅ Response sent successfully');
+    console.log('Response sent successfully');
     
   } catch (error) {
-    console.error('❌ Error in /api/clone-website:', error);
+    console.error('Error in /api/clone-website:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 async function processWebsite(jobId, website, email, theme, businessType) {
   try {
-    console.log(`\n🔄 Starting website processing for job ${jobId}`);
-    console.log(`🌐 Processing website: ${website}`);
+    console.log(`\nStarting website processing for job ${jobId}`);
+    console.log(`Processing website: ${website}`);
     
     // 1. Scrape website content with enhanced extraction
-    console.log('🔍 Step 1: Starting website scraping...');
-    console.log('📡 Making HTTP request to website...');
+    console.log('Step 1: Starting website scraping...');
+    console.log('Making HTTP request to website...');
     
     const { data } = await axios.get(website);
-    console.log('✅ Website response received successfully');
-    console.log(`📊 Response size: ${(data.length / 1024).toFixed(2)} KB`);
+    console.log('Website response received successfully');
+    console.log(`Response size: ${(data.length / 1024).toFixed(2)} KB`);
     
-    console.log('🔍 Loading HTML with Cheerio...');
+    console.log('Loading HTML with Cheerio...');
     const $ = cheerio.load(data);
-    console.log('✅ HTML loaded and parsed successfully');
+    console.log('HTML loaded and parsed successfully');
     
-    console.log('📝 Extracting website content...');
+    console.log('Extracting website content...');
     
     // Enhanced content extraction
     const content = {
@@ -118,7 +118,7 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       socialLinks: extractSocialLinks($)
     };
 
-    console.log('📊 Content extraction completed:');
+    console.log('Content extraction completed:');
     console.log(`   - Title: ${content.title}`);
     console.log(`   - Description: ${content.description}`);
     console.log(`   - Logo found: ${content.logo ? 'Yes' : 'No'}`);
@@ -131,16 +131,16 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     console.log(`   - Social links: ${content.socialLinks.length}`);
 
     // Update status to analyzing
-    console.log('🔄 Updating job status to "analyzing"...');
+    console.log('Updating job status to "analyzing"...');
     await pool.query(
       'UPDATE jobs SET status = $1 WHERE id = $2',
       ['analyzing', jobId]
     );
-    console.log('✅ Status updated to "analyzing"');
+    console.log('Status updated to "analyzing"');
 
     // 2. Use OpenAI to generate improved designs with better context
-    console.log('🤖 Step 2: Starting AI design generation...');
-    console.log('📝 Building AI prompt...');
+    console.log('Step 2: Starting AI design generation...');
+    console.log('Building AI prompt...');
     
     const prompt = `You are a professional web designer tasked with redesigning a website. 
 
@@ -171,9 +171,9 @@ REQUIREMENTS:
 
 Generate complete, production-ready HTML/CSS code that can be immediately used.`;
 
-    console.log('📝 AI Prompt built successfully');
-    console.log('🤖 Calling OpenAI API...');
-    console.log(`📊 Prompt length: ${prompt.length} characters`);
+    console.log('AI Prompt built successfully');
+    console.log('Calling OpenAI API...');
+    console.log(`Prompt length: ${prompt.length} characters`);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
@@ -191,27 +191,27 @@ Generate complete, production-ready HTML/CSS code that can be immediately used.`
       temperature: 0.7
     });
 
-    console.log('✅ OpenAI API call completed successfully');
-    console.log(`📊 Response tokens used: ${completion.usage?.total_tokens || 'Unknown'}`);
-    console.log(`📝 Generated content length: ${completion.choices[0].message.content.length} characters`);
+    console.log('OpenAI API call completed successfully');
+    console.log(`Response tokens used: ${completion.usage?.total_tokens || 'Unknown'}`);
+    console.log(`Generated content length: ${completion.choices[0].message.content.length} characters`);
 
     // 3. Store generated designs
-    console.log('💾 Step 3: Storing generated design...');
+    console.log('Step 3: Storing generated design...');
     const newDesign = completion.choices[0].message.content;
     const demoUrl = `/demo/${jobId}`;
 
-    console.log('💾 Updating database with generated design...');
+    console.log('Updating database with generated design...');
     await pool.query(
       'UPDATE jobs SET status = $1, demo_urls = $2, generated_html = $3 WHERE id = $4',
       ['completed', JSON.stringify([demoUrl]), newDesign, jobId]
     );
-    console.log('✅ Design stored in database successfully');
-    console.log(`🔗 Demo URL: ${demoUrl}`);
+    console.log('Design stored in database successfully');
+    console.log(`Demo URL: ${demoUrl}`);
 
     // 4. Send email if provided
     if (email) {
-      console.log('📧 Step 4: Sending email notification...');
-      console.log(`📧 Sending email to: ${email}`);
+      console.log('Step 4: Sending email notification...');
+      console.log(`Sending email to: ${email}`);
       
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -244,15 +244,15 @@ Generate complete, production-ready HTML/CSS code that can be immediately used.`
           </div>
         `
       });
-      console.log('✅ Email sent successfully');
+      console.log('Email sent successfully');
     } else {
-      console.log('📧 No email provided, skipping email notification');
+      console.log('No email provided, skipping email notification');
     }
 
-    console.log(`🎉 Website processing completed successfully for job ${jobId}!`);
+    console.log(`Website processing completed successfully for job ${jobId}!`);
 
   } catch (error) {
-    console.error(`❌ Error processing website for job ${jobId}:`, error);
+    console.error(`Error processing website for job ${jobId}:`, error);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack,
@@ -264,7 +264,7 @@ Generate complete, production-ready HTML/CSS code that can be immediately used.`
       'UPDATE jobs SET status = $1 WHERE id = $2',
       [`error: ${error.message}`, jobId]
     );
-    console.log(`✅ Error status updated in database for job ${jobId}`);
+    console.log(`Error status updated in database for job ${jobId}`);
   }
 }
 
@@ -347,68 +347,68 @@ function extractSocialLinks($) {
 // Add this new endpoint for image mockup
 app.post('/api/create-mockup', async (req, res) => {
   try {
-    console.log('🖼️ Starting mockup generation process...');
-    console.log('📝 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Starting mockup generation process...');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
     
     const { website, theme, businessType } = req.body;
     const jobId = uuidv4();
     
-    console.log(`🆔 Generated mockup job ID: ${jobId}`);
-    console.log(`🌐 Website: ${website}`);
-    console.log(`🎨 Theme: ${theme}`);
-    console.log(`🏢 Business Type: ${businessType}`);
+    console.log('Generated mockup job ID:', jobId);
+    console.log('Website:', website);
+    console.log('Theme:', theme);
+    console.log('Business Type:', businessType);
 
     // Store job in database
-    console.log('💾 Storing mockup job in database...');
+    console.log('Storing mockup job in database...');
     await pool.query(
       'INSERT INTO jobs (id, website, theme, business_type, status, job_type) VALUES ($1, $2, $3, $4, $5, $6)',
       [jobId, website, theme, businessType, 'generating', 'mockup']
     );
-    console.log('✅ Mockup job stored in database successfully');
+    console.log('Mockup job stored in database successfully');
 
     // Start the mockup process asynchronously
-    console.log('🔄 Starting async mockup generation...');
+    console.log('Starting async mockup generation...');
     createMockup(jobId, website, theme, businessType);
 
-    console.log('📤 Sending mockup response to client...');
+    console.log('Sending mockup response to client...');
     res.json({ 
       message: 'Mockup generation started', 
       jobId 
     });
-    console.log('✅ Mockup response sent successfully');
+    console.log('Mockup response sent successfully');
     
   } catch (error) {
-    console.error('❌ Error in /api/create-mockup:', error);
+    console.error('Error in /api/create-mockup:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 async function createMockup(jobId, website, theme, businessType) {
   try {
-    console.log(`\n🖼️ Starting mockup generation for job ${jobId}`);
-    console.log(`🌐 Processing website: ${website}`);
+    console.log(`\nStarting mockup generation for job ${jobId}`);
+    console.log(`Processing website: ${website}`);
     
     // Update initial status
-    console.log('🔄 Updating job status to "scraping"...');
+    console.log('Updating job status to "scraping"...');
     await pool.query(
       'UPDATE jobs SET status = $1 WHERE id = $2',
       ['scraping', jobId]
     );
-    console.log('✅ Status updated to "scraping"');
+    console.log('Status updated to "scraping"');
 
     // 1. Scrape website content with enhanced extraction (same as main function)
-    console.log('🔍 Step 1: Starting website scraping for mockup...');
-    console.log('📡 Making HTTP request to website...');
+    console.log('Step 1: Starting website scraping for mockup...');
+    console.log('Making HTTP request to website...');
     
     const { data } = await axios.get(website);
-    console.log('✅ Website response received successfully');
-    console.log(`📊 Response size: ${(data.length / 1024).toFixed(2)} KB`);
+    console.log('Website response received successfully');
+    console.log(`Response size: ${(data.length / 1024).toFixed(2)} KB`);
     
-    console.log('🔍 Loading HTML with Cheerio...');
+    console.log('Loading HTML with Cheerio...');
     const $ = cheerio.load(data);
-    console.log('✅ HTML loaded and parsed successfully');
+    console.log('HTML loaded and parsed successfully');
     
-    console.log('📝 Extracting content for mockup...');
+    console.log('Extracting content for mockup...');
     
     const content = {
       title: $('title').text().trim() || 'Website',
@@ -421,7 +421,7 @@ async function createMockup(jobId, website, theme, businessType) {
       socialLinks: extractSocialLinks($)
     };
     
-    console.log('📊 Mockup content extraction completed:');
+    console.log('Mockup content extraction completed:');
     console.log(`   - Title: ${content.title}`);
     console.log(`   - Description: ${content.description}`);
     console.log(`   - Logo found: ${content.logo ? 'Yes' : 'No'}`);
@@ -432,16 +432,16 @@ async function createMockup(jobId, website, theme, businessType) {
     console.log(`   - Social links: ${content.socialLinks.length}`);
     
     // Update status to generating
-    console.log('🔄 Updating job status to "generating"...');
+    console.log('Updating job status to "generating"...');
     await pool.query(
       'UPDATE jobs SET status = $1 WHERE id = $2',
       ['generating', jobId]
     );
-    console.log('✅ Status updated to "generating"');
+    console.log('Status updated to "generating"');
     
     // 2. Generate image using DALL-E with enhanced prompt
-    console.log('🎨 Step 2: Starting DALL-E image generation...');
-    console.log('📝 Building DALL-E prompt...');
+    console.log('Step 2: Starting DALL-E image generation...');
+    console.log('Building DALL-E prompt...');
     
     const prompt = `Create a professional, modern website mockup for a ${businessType} business with a ${theme} theme.
 
@@ -471,9 +471,9 @@ DESIGN REQUIREMENTS:
 
 Style: Professional website mockup, clean design, modern UI, business-appropriate, realistic content placement`;
 
-    console.log('📝 DALL-E prompt built successfully');
-    console.log(`📊 Prompt length: ${prompt.length} characters`);
-    console.log('🎨 Calling DALL-E API...');
+    console.log('DALL-E prompt built successfully');
+    console.log(`Prompt length: ${prompt.length} characters`);
+    console.log('Calling DALL-E API...');
 
     const image = await openai.images.generate({
       model: "dall-e-3",
@@ -483,29 +483,29 @@ Style: Professional website mockup, clean design, modern UI, business-appropriat
       n: 1,
     });
     
-    console.log('✅ DALL-E API call completed successfully');
-    console.log('📊 DALL-E response received:', JSON.stringify(image, null, 2));
+    console.log('DALL-E API call completed successfully');
+    console.log('DALL-E response received:', JSON.stringify(image, null, 2));
     
     if (!image.data || !image.data[0] || !image.data[0].url) {
       throw new Error('Failed to generate image - no URL returned');
     }
 
     const imageUrl = image.data[0].url;
-    console.log('🔗 Generated image URL:', imageUrl);
+    console.log('Generated image URL:', imageUrl);
 
     // 3. Store the result
-    console.log('💾 Step 3: Storing mockup result...');
-    console.log('💾 Updating database with mockup URL...');
+    console.log('Storing mockup result...');
+    console.log('Updating database with mockup URL...');
     
     await pool.query(
       'UPDATE jobs SET status = $1, mockup_url = $2 WHERE id = $3',
       ['completed', imageUrl, jobId]
     );
-    console.log('✅ Mockup result stored in database successfully');
-    console.log(`🎉 Mockup generation completed successfully for job ${jobId}!`);
+    console.log('Mockup result stored in database successfully');
+    console.log(`Mockup generation completed successfully for job ${jobId}!`);
 
   } catch (error) {
-    console.error(`❌ Error generating mockup for job ${jobId}:`, error);
+    console.error(`Error generating mockup for job ${jobId}:`, error);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack,
@@ -517,7 +517,7 @@ Style: Professional website mockup, clean design, modern UI, business-appropriat
       'UPDATE jobs SET status = $1 WHERE id = $2',
       [`error: ${error.message}`, jobId]
     );
-    console.log(`✅ Error status updated in database for job ${jobId}`);
+    console.log(`Error status updated in database for job ${jobId}`);
   }
 }
 
@@ -525,7 +525,7 @@ Style: Professional website mockup, clean design, modern UI, business-appropriat
 app.get('/api/status/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
-    console.log(`📊 Status check requested for job: ${jobId}`);
+    console.log(`Status check requested for job: ${jobId}`);
     
     const result = await pool.query(
       'SELECT status, demo_urls, mockup_url, job_type, website FROM jobs WHERE id = $1',
@@ -533,13 +533,13 @@ app.get('/api/status/:jobId', async (req, res) => {
     );
     
     if (result.rows.length === 0) {
-      console.log(`❌ Job ${jobId} not found`);
+      console.log(`Job ${jobId} not found`);
       res.status(404).json({ error: 'Job not found' });
       return;
     }
 
     const job = result.rows[0];
-    console.log(`📊 Job ${jobId} status: ${job.status}, type: ${job.job_type}`);
+    console.log(`Job ${jobId} status: ${job.status}, type: ${job.job_type}`);
     
     // Provide more detailed status information
     let detailedStatus = job.status;
@@ -583,10 +583,10 @@ app.get('/api/status/:jobId', async (req, res) => {
       website: job.website
     });
     
-    console.log(`✅ Status response sent for job ${jobId}`);
+    console.log(`Status response sent for job ${jobId}`);
     
   } catch (error) {
-    console.error(`❌ Error checking status for job ${req.params.jobId}:`, error);
+    console.error(`Error checking status for job ${req.params.jobId}:`, error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -999,14 +999,14 @@ app.get('/', (req, res) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎨 AI Website Redesigner</h1>
+            <h1>AI Website Redesigner</h1>
             <p>Transform your existing website with AI-powered modern design</p>
           </div>
           
           <div class="main-content">
             <div class="option-buttons">
-              <button type="button" class="option-button active" data-option="clone">🚀 Full Site Redesign</button>
-              <button type="button" class="option-button" data-option="mockup">🖼️ Quick Mockup</button>
+              <button type="button" class="option-button active" data-option="clone">Full Site Redesign</button>
+              <button type="button" class="option-button" data-option="mockup">Quick Mockup</button>
             </div>
 
             <form id="redesign-form">
@@ -1014,11 +1014,11 @@ app.get('/', (req, res) => {
                 <div class="form-group full-width">
                   <label for="website">Your Current Website URL:</label>
                   <input type="url" id="website" name="website" required placeholder="https://example.com">
-                  <button type="button" id="analyze-btn" class="analyze-btn">🔍 Analyze Website</button>
+                  <button type="button" id="analyze-btn" class="analyze-btn">Analyze Website</button>
                 </div>
                 
                 <div id="analysis-results" class="analysis-results">
-                  <h3>📊 Website Analysis Results</h3>
+                  <h3>Website Analysis Results</h3>
                   <div id="analysis-content"></div>
                 </div>
               </div>
@@ -1033,9 +1033,9 @@ app.get('/', (req, res) => {
                   <label for="theme">Preferred Style:</label>
                   <select id="theme" name="theme" required>
                     <option value="">Select a style</option>
-                    <option value="clean-white">✨ Clean White</option>
-                    <option value="dark-black">🌙 Dark Black</option>
-                    <option value="colorful">🎨 Colorful</option>
+                    <option value="clean-white">Clean White</option>
+                    <option value="dark-black">Dark Black</option>
+                    <option value="colorful">Colorful</option>
                   </select>
                 </div>
               </div>
@@ -1044,19 +1044,19 @@ app.get('/', (req, res) => {
                 <label for="businessType">Business Type:</label>
                 <select id="businessType" name="businessType" required>
                   <option value="">Select business type</option>
-                  <option value="flower-shop">🌸 Flower Shop</option>
-                  <option value="retail-store">🛍️ Retail Store</option>
-                  <option value="product-info">📦 Product Information</option>
-                  <option value="healthcare">🏥 Healthcare</option>
-                  <option value="tech">💻 Tech</option>
-                  <option value="pet-care">🐾 Pet Care</option>
-                  <option value="local-business">🏢 Local Business</option>
-                  <option value="blog">📝 Blog</option>
+                  <option value="flower-shop">Flower Shop</option>
+                  <option value="retail-store">Retail Store</option>
+                  <option value="product-info">Product Information</option>
+                  <option value="healthcare">Healthcare</option>
+                  <option value="tech">Tech</option>
+                  <option value="pet-care">Pet Care</option>
+                  <option value="local-business">Local Business</option>
+                  <option value="blog">Blog</option>
                 </select>
               </div>
               
               <button type="submit" id="submit-btn" class="submit-btn">
-                🚀 Generate Redesigned Website
+                Generate Redesigned Website
               </button>
             </form>
             
@@ -1086,9 +1086,9 @@ app.get('/', (req, res) => {
                 
                 // Update button text based on option
                 if (selectedOption === 'clone') {
-                  submitBtn.innerHTML = '🚀 Generate Redesigned Website';
+                  submitBtn.innerHTML = 'Generate Redesigned Website';
                 } else {
-                  submitBtn.innerHTML = '🖼️ Generate Website Mockup';
+                  submitBtn.innerHTML = 'Generate Website Mockup';
                 }
               });
             });
@@ -1105,7 +1105,7 @@ app.get('/', (req, res) => {
               
               isAnalyzing = true;
               analyzeBtn.disabled = true;
-              analyzeBtn.innerHTML = '🔍 Analyzing...';
+              analyzeBtn.innerHTML = 'Analyzing...';
               
               try {
                 const response = await fetch('/api/analyze-website', {
@@ -1123,30 +1123,30 @@ app.get('/', (req, res) => {
                 }
                 
                 // Display analysis results
-                analysisContent.innerHTML = \`
+                analysisContent.innerHTML = `
                   <div class="analysis-item">
-                    <strong>Title:</strong> \${data.title || 'Not found'}
+                    <strong>Title:</strong> ${data.title || 'Not found'}
                   </div>
                   <div class="analysis-item">
-                    <strong>Description:</strong> \${data.description || 'Not found'}
+                    <strong>Description:</strong> ${data.description || 'Not found'}
                   </div>
                   <div class="analysis-item">
-                    <strong>Estimated Business Type:</strong> \${data.estimatedBusinessType}
+                    <strong>Estimated Business Type:</strong> ${data.estimatedBusinessType}
                   </div>
                   <div class="analysis-item">
                     <strong>Suggested Themes:</strong>
                     <div class="suggestions">
-                      \${data.suggestedThemes.map(theme => 
-                        \`<span class="suggestion-tag" onclick="selectTheme('\${theme}')">\${theme}</span>\`
+                      ${data.suggestedThemes.map(theme => 
+                        `<span class="suggestion-tag" onclick="selectTheme('${theme}')">${theme}</span>`
                       ).join('')}
                     </div>
                   </div>
-                  \${data.logo ? \`
+                  ${data.logo ? `
                     <div class="analysis-item">
                       <strong>Logo Found:</strong> ✅
                     </div>
-                  \` : ''}
-                \`;
+                  ` : ''}
+                `;
                 
                 analysisResults.style.display = 'block';
                 
@@ -1160,7 +1160,7 @@ app.get('/', (req, res) => {
               } finally {
                 isAnalyzing = false;
                 analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = '🔍 Analyze Website';
+                analyzeBtn.innerHTML = 'Analyze Website';
               }
             });
 
@@ -1179,14 +1179,14 @@ app.get('/', (req, res) => {
               }
               
               statusBox.className = 'status-active status-loading';
-                              statusBox.innerHTML = '<div class="progress-container">' +
-                  '<h3>🚀 Starting the redesign process...</h3>' +
-                  '<div class="progress-bar">' +
-                  '<div class="progress-fill" id="progress-fill"></div>' +
-                  '</div>' +
-                  '<p id="current-step">Initializing...</p>' +
-                  '<div class="step-details" id="step-details"></div>' +
-                  '</div>';
+              statusBox.innerHTML = '<div class="progress-container">' +
+                '<h3>Starting the redesign process...</h3>' +
+                '<div class="progress-bar">' +
+                '<div class="progress-fill" id="progress-fill"></div>' +
+                '</div>' +
+                '<p id="current-step">Initializing...</p>' +
+                '<div class="step-details" id="step-details"></div>' +
+                '</div>';
 
               const formData = {
                 website: normalizeUrl(form.website.value),
@@ -1197,10 +1197,10 @@ app.get('/', (req, res) => {
 
               try {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '⏳ Processing...';
+                submitBtn.innerHTML = 'Processing...';
                 
                 const endpoint = selectedOption === 'clone' ? '/api/clone-website' : '/api/create-mockup';
-                console.log('📡 Making request to:', endpoint);
+                console.log('Making request to:', endpoint);
                 
                 const response = await fetch(endpoint, {
                   method: 'POST',
@@ -1215,40 +1215,36 @@ app.get('/', (req, res) => {
                   throw new Error(data.error);
                 }
                 
-                console.log('✅ Initial response received:', data);
+                console.log('Initial response received:', data);
                 updateProgress(10, 'Job started successfully');
                 
                 pollStatus(data.jobId);
               } catch (error) {
-                console.error('❌ Error in form submission:', error);
+                console.error('Error in form submission:', error);
                 statusBox.className = 'status-active status-error';
-                statusBox.innerHTML = `
-                  <h3>❌ Error Starting Process</h3>
-                  <p><strong>Error:</strong> ${error.message}</p>
-                  <p>Please check your input and try again.</p>
-                `;
+                statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
+                  '<p><strong>Error:</strong> ' + error.message + '</p>' +
+                  '<p>Please check your input and try again.</p>';
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = selectedOption === 'clone' ? '🚀 Generate Redesigned Website' : '🖼️ Generate Website Mockup';
+                submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
               }
             });
 
             async function pollStatus(jobId) {
               try {
-                console.log(`📊 Polling status for job: ${jobId}`);
+                console.log('Polling status for job:', jobId);
                 const response = await fetch('/api/status/' + jobId);
                 const data = await response.json();
                 
                 if (data.error) {
-                  console.error('❌ Status check error:', data.error);
+                  console.error('Status check error:', data.error);
                   statusBox.className = 'status-active status-error';
-                  statusBox.innerHTML = `
-                    <h3>❌ Error Checking Status</h3>
-                    <p><strong>Error:</strong> ${data.error}</p>
-                  `;
+                  statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
+                    '<p><strong>Error:</strong> ' + data.error + '</p>';
                   return;
                 }
 
-                console.log(`📊 Status update for job ${jobId}:`, data);
+                console.log('Status update for job', jobId, ':', data);
                 
                 // Update progress based on status
                 let progress = 0;
@@ -1258,96 +1254,73 @@ app.get('/', (req, res) => {
                 switch (data.status) {
                   case 'scraping':
                     progress = 25;
-                    currentStep = '🔍 Scraping Website Content';
-                    stepDetails = `
-                      <div class="step-info">
-                        <p><strong>What's happening:</strong> Analyzing your website structure and extracting content</p>
-                        <p><strong>Current task:</strong> Reading HTML, finding logos, navigation, and content</p>
-                        <p><strong>Website:</strong> ${data.website}</p>
-                      </div>
-                    `;
+                    currentStep = 'Scraping Website Content';
+                    stepDetails = '<div class="step-info">' +
+                      '<p><strong>What is happening:</strong> Analyzing your website structure and extracting content</p>' +
+                      '<p><strong>Current task:</strong> Reading HTML, finding logos, navigation, and content</p>' +
+                      '<p><strong>Website:</strong> ' + data.website + '</p>' +
+                      '</div>';
                     break;
                     
                   case 'analyzing':
                     progress = 50;
-                    currentStep = '🤖 AI Content Analysis';
-                    stepDetails = `
-                      <div class="step-info">
-                        <p><strong>What's happening:</strong> AI is processing your content and planning the redesign</p>
-                        <p><strong>Current task:</strong> Understanding your business type and content structure</p>
-                        <p><strong>Business:</strong> ${document.getElementById('businessType').value}</p>
-                      </div>
-                    `;
+                    currentStep = 'AI Content Analysis';
+                    stepDetails = '<div class="step-info">' +
+                      '<p><strong>What is happening:</strong> AI is processing your content and planning the redesign</p>' +
+                      '<p><strong>Current task:</strong> Understanding your business type and content structure</p>' +
+                      '<p><strong>Business:</strong> ' + document.getElementById('businessType').value + '</p>' +
+                      '</div>';
                     break;
                     
                   case 'generating':
                     if (data.jobType === 'mockup') {
                       progress = 75;
-                      currentStep = '🎨 Creating Website Mockup';
-                      stepDetails = `
-                        <div class="step-info">
-                          <p><strong>What's happening:</strong> AI is generating a visual mockup of your redesigned website</p>
-                          <p><strong>Current task:</strong> Using DALL-E to create a professional mockup</p>
-                          <p><strong>Theme:</strong> ${document.getElementById('theme').value}</p>
-                        </div>
-                      `;
+                      currentStep = 'Creating Website Mockup';
+                      stepDetails = '<div class="step-info">' +
+                        '<p><strong>What is happening:</strong> AI is generating a visual mockup of your redesigned website</p>' +
+                        '<p><strong>Current task:</strong> Using DALL-E to create a professional mockup</p>' +
+                        '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
+                        '</div>';
                     } else {
                       progress = 75;
-                      currentStep = '🎨 Generating Redesigned Website';
-                      stepDetails = `
-                        <div class="step-info">
-                          <p><strong>What's happening:</strong> AI is creating your complete redesigned website</p>
-                          <p><strong>Current task:</strong> Building HTML/CSS with modern design principles</p>
-                          <p><strong>Theme:</strong> ${document.getElementById('theme').value}</p>
-                        </div>
-                      `;
+                      currentStep = 'Generating Redesigned Website';
+                      stepDetails = '<div class="step-info">' +
+                        '<p><strong>What is happening:</strong> AI is creating your complete redesigned website</p>' +
+                        '<p><strong>Current task:</strong> Building HTML/CSS with modern design principles</p>' +
+                        '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
+                        '</div>';
                     }
                     break;
                     
                   case 'completed':
                     progress = 100;
-                    currentStep = '✅ Process Completed!';
-                    stepDetails = `
-                      <div class="step-info success">
-                        <p><strong>🎉 Your ${data.jobType === 'mockup' ? 'mockup' : 'redesigned website'} is ready!</strong></p>
-                      </div>
-                    `;
+                    currentStep = 'Process Completed!';
+                    stepDetails = '<div class="step-info success">' +
+                      '<p><strong>Your ' + (data.jobType === 'mockup' ? 'mockup' : 'redesigned website') + ' is ready!</strong></p>' +
+                      '</div>';
                     break;
                     
                   default:
                     if (data.status.startsWith('error:')) {
                       progress = 0;
-                      currentStep = '❌ Error Occurred';
-                      stepDetails = `
-                        <div class="step-info error">
-                          <p><strong>Error:</strong> ${data.status.replace('error: ', '')}</p>
-                          <p>Please try again or contact support if the problem persists.</p>
-                        </div>
-                      `;
+                      currentStep = 'Error Occurred';
+                      stepDetails = '<div class="step-info error">' +
+                        '<p><strong>Error:</strong> ' + data.status.replace('error: ', '') + '</p>' +
+                        '<p>Please try again or contact support if the problem persists.</p>' +
+                        '</div>';
                     } else {
                       progress = 10;
-                      currentStep = '⏳ Processing...';
-                      stepDetails = `
-                        <div class="step-info">
-                          <p><strong>Status:</strong> ${data.status}</p>
-                          <p>Please wait while we process your request...</p>
-                        </div>
-                      `;
+                      currentStep = 'Processing...';
+                      stepDetails = '<div class="step-info">' +
+                        '<p><strong>Status:</strong> ' + data.status + '</p>' +
+                        '<p>Please wait while we process your request...</p>' +
+                        '</div>';
                     }
                 }
                 
                 // Update the UI
                 updateProgress(progress, currentStep);
                 document.getElementById('step-details').innerHTML = stepDetails;
-
-                // Show current status
-                const statusText = data.status || 'Processing...';
-                let statusIcon = '⏳';
-                if (statusText.includes('error')) statusIcon = '❌';
-                else if (statusText === 'completed') statusIcon = '✅';
-                else if (statusText === 'scraping') statusIcon = '🔍';
-                else if (statusText === 'analyzing') statusIcon = '🤖';
-                else if (statusText === 'generating') statusIcon = '🎨';
                 
                 // Continue polling if not completed or errored
                 if (data.status && !data.status.startsWith('error') && data.status !== 'completed') {
@@ -1356,35 +1329,33 @@ app.get('/', (req, res) => {
                   statusBox.className = 'status-active status-success';
                   
                   if (data.mockupUrl) {
-                      statusBox.innerHTML += '<div class="mockup-result"><h3>🎨 Your Website Mockup:</h3>' +
-                        '<img src="' + data.mockupUrl + '" alt="Website Mockup">' +
-                        '<div class="download-section">' +
-                        '<a href="' + data.mockupUrl + '" download="website-mockup.png" class="download-btn">📥 Download Mockup</a>' +
-                        '</div></div>';
+                    statusBox.innerHTML += '<div class="mockup-result"><h3>Your Website Mockup:</h3>' +
+                      '<img src="' + data.mockupUrl + '" alt="Website Mockup">' +
+                      '<div class="download-section">' +
+                      '<a href="' + data.mockupUrl + '" download="website-mockup.png" class="download-btn">Download Mockup</a>' +
+                      '</div></div>';
                   } else if (data.demoUrls) {
-                      statusBox.innerHTML += '<div class="demo-links"><h3>🚀 Your Redesigned Website:</h3>' + 
-                        data.demoUrls.map(function(url) {
-                          return '<div class="demo-item">' +
-                            '<a href="' + url + '" target="_blank" class="demo-btn">🌐 View Redesigned Site</a>' +
-                            '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">📋 Copy Link</button>' +
-                            '</div>';
-                        }).join('') +
-                        '</div>';
-                    }
+                    statusBox.innerHTML += '<div class="demo-links"><h3>Your Redesigned Website:</h3>' + 
+                      data.demoUrls.map(function(url) {
+                        return '<div class="demo-item">' +
+                          '<a href="' + url + '" target="_blank" class="demo-btn">View Redesigned Site</a>' +
+                          '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                          '</div>';
+                      }).join('') +
+                      '</div>';
+                  }
                   
                   submitBtn.disabled = false;
-                  submitBtn.innerHTML = selectedOption === 'clone' ? '🚀 Generate Redesigned Website' : '🖼️ Generate Website Mockup';
+                  submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
                 }
               } catch (error) {
-                console.error('❌ Error polling status:', error);
+                console.error('Error polling status:', error);
                 statusBox.className = 'status-active status-error';
-                statusBox.innerHTML = `
-                  <h3>❌ Error Checking Status</h3>
-                  <p><strong>Error:</strong> ${error.message}</p>
-                  <p>Please refresh the page and try again.</p>
-                `;
+                statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
+                  '<p><strong>Error:</strong> ' + error.message + '</p>' +
+                  '<p>Please refresh the page and try again.</p>';
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = selectedOption === 'clone' ? '🚀 Generate Redesigned Website' : '🖼️ Generate Website Mockup';
+                submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
               }
             }
             
@@ -1400,7 +1371,7 @@ app.get('/', (req, res) => {
                 currentStepElement.textContent = step;
               }
               
-              console.log(`📊 Progress: ${percentage}% - ${step}`);
+              console.log('Progress:', percentage + '% -', step);
             }
             
             function copyToClipboard(text) {
@@ -1496,11 +1467,11 @@ app.get('/demo/:jobId', async (req, res) => {
       '<body>',
       `<body>
         <div class="demo-header">
-          <h1>🎨 AI-Redesigned Website</h1>
+          <h1>AI-Redesigned Website</h1>
           <p>This is an AI-generated redesign of <a href="${originalWebsite}" target="_blank">${originalWebsite}</a></p>
           <p>All original content has been preserved and enhanced with modern design</p>
-        </div>`
-    );
+        </div>
+      `);
     
     // Serve the enhanced HTML
     res.send(enhancedHtml);
@@ -1581,5 +1552,5 @@ function suggestThemes($) {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+  console.log('Server running on port', PORT);
+});
