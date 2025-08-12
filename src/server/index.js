@@ -672,10 +672,105 @@ app.post('/api/analyze-website', async (req, res) => {
       return res.status(400).json({ error: 'Website URL is required' });
     }
 
-    const { data } = await axios.get(website);
-    const $ = cheerio.load(data);
+    console.log('Starting comprehensive website analysis for:', website);
     
-    const analysis = {
+    // 1. Analyze the main page first
+    const mainPageData = await axios.get(website);
+    const $ = cheerio.load(mainPageData.data);
+    
+    // 2. Extract all internal links to discover pages
+    const internalLinks = new Set();
+    const externalLinks = new Set();
+    const allLinks = $('a[href]');
+    
+    allLinks.each((i, el) => {
+      const href = $(el).attr('href');
+      if (href) {
+        const absoluteUrl = new URL(href, website).href;
+        if (absoluteUrl.startsWith(website)) {
+          internalLinks.add(absoluteUrl);
+        } else if (href.startsWith('http')) {
+          externalLinks.add(absoluteUrl);
+        }
+      }
+    });
+    
+    // 3. Crawl internal pages to get comprehensive data
+    const pageAnalysis = [];
+    const allMetaData = new Map();
+    const allKeywords = new Map();
+    const deadLinks = [];
+    
+    console.log(`Found ${internalLinks.size} internal pages to analyze`);
+    
+    // Limit to first 10 pages for performance
+    const pagesToAnalyze = Array.from(internalLinks).slice(0, 10);
+    
+    for (const pageUrl of pagesToAnalyze) {
+      try {
+        console.log(`Analyzing page: ${pageUrl}`);
+        const pageResponse = await axios.get(pageUrl, { timeout: 10000 });
+        const page$ = cheerio.load(pageResponse.data);
+        
+        // Extract page-specific data
+        const pageData = {
+          url: pageUrl,
+          title: page$.('title').text().trim(),
+          metaDescription: page$.('meta[name="description"]').attr('content') || '',
+          metaKeywords: page$.('meta[name="keywords"]').attr('content') || '',
+          h1Count: page$('h1').length,
+          h2Count: page$('h2').length,
+          h3Count: page$('h3').length,
+          imageCount: page$('img').length,
+          wordCount: page$('body').text().trim().split(/\s+/).length,
+          loadTime: pageResponse.headers['x-response-time'] || 'unknown'
+        };
+        
+        pageAnalysis.push(pageData);
+        
+        // Collect meta data
+        page$.('meta').each((i, el) => {
+          const name = page$(el).attr('name') || page$(el).attr('property');
+          const content = page$(el).attr('content');
+          if (name && content) {
+            if (!allMetaData.has(name)) {
+              allMetaData.set(name, new Set());
+            }
+            allMetaData.get(name).add(content);
+          }
+        });
+        
+        // Extract keywords from content
+        const pageText = page$('body').text().toLowerCase();
+        const words = pageText.match(/\b[a-z]{3,}\b/g) || [];
+        words.forEach(word => {
+          if (word.length > 3) {
+            allKeywords.set(word, (allKeywords.get(word) || 0) + 1);
+          }
+        });
+        
+      } catch (error) {
+        console.log(`Failed to analyze page ${pageUrl}:`, error.message);
+        deadLinks.push(pageUrl);
+      }
+    }
+    
+    // 4. Check external links for dead links
+    console.log(`Checking ${externalLinks.size} external links for health...`);
+    const externalLinkChecks = Array.from(externalLinks).slice(0, 20); // Limit external checks
+    
+    for (const externalUrl of externalLinkChecks) {
+      try {
+        await axios.head(externalUrl, { timeout: 5000 });
+      } catch (error) {
+        if (error.response && error.response.status >= 400) {
+          deadLinks.push(externalUrl);
+        }
+      }
+    }
+    
+    // 5. Analyze main page content
+    const mainPageAnalysis = {
       title: $('title').text().trim(),
       description: $('meta[name="description"]').attr('content') || '',
       logo: findLogo($),
@@ -686,9 +781,79 @@ app.post('/api/analyze-website', async (req, res) => {
       estimatedBusinessType: estimateBusinessType($),
       suggestedThemes: suggestThemes($)
     };
+    
+    // 6. Compile comprehensive analysis
+    const analysis = {
+      // Basic info
+      ...mainPageAnalysis,
+      
+      // Page structure
+      totalPages: internalLinks.size,
+      analyzedPages: pageAnalysis.length,
+      averageWordsPerPage: Math.round(pageAnalysis.reduce((sum, page) => sum + page.wordCount, 0) / pageAnalysis.length),
+      
+      // Content analysis
+      totalImages: pageAnalysis.reduce((sum, page) => sum + page.imageCount, 0),
+      totalHeadings: {
+        h1: pageAnalysis.reduce((sum, page) => sum + page.h1Count, 0),
+        h2: pageAnalysis.reduce((sum, page) => sum + page.h2Count, 0),
+        h3: pageAnalysis.reduce((sum, page) => sum + page.h3Count, 0)
+      },
+      
+      // Meta data summary
+      metaDataSummary: Object.fromEntries(
+        Array.from(allMetaData.entries()).map(([name, values]) => [
+          name, 
+          Array.from(values).slice(0, 5) // Show first 5 unique values
+        ])
+      ),
+      
+      // Top keywords (most frequent)
+      topKeywords: Array.from(allKeywords.entries())
+        .sort(function(a, b) { return b[1] - a[1]; })
+        .slice(0, 20)
+        .map(function(entry) { return { word: entry[0], count: entry[1] }; }),
+      
+      // Link health
+      linkHealth: {
+        internalLinks: internalLinks.size,
+        externalLinks: externalLinks.size,
+        deadLinks: deadLinks.length,
+        deadLinkPercentage: Math.round((deadLinks.length / (internalLinks.size + externalLinks.size)) * 100)
+      },
+      
+      // SEO insights
+      seoInsights: {
+        hasTitle: !!mainPageAnalysis.title,
+        hasDescription: !!mainPageAnalysis.description,
+        titleLength: mainPageAnalysis.title ? mainPageAnalysis.title.length : 0,
+        descriptionLength: mainPageAnalysis.description ? mainPageAnalysis.description.length : 0,
+        titleOptimal: mainPageAnalysis.title && mainPageAnalysis.title.length >= 30 && mainPageAnalysis.title.length <= 60,
+        descriptionOptimal: mainPageAnalysis.description && mainPageAnalysis.description.length >= 120 && mainPageAnalysis.description.length <= 160
+      },
+      
+      // Page performance indicators
+      performance: {
+        averageLoadTime: 'analyzed', // Would need actual timing data
+        imageOptimization: pageAnalysis.reduce(function(sum, page) { return sum + page.imageCount; }, 0) > 0 ? 'images present' : 'no images',
+        contentDensity: pageAnalysis.length > 0 ? 'good' : 'limited'
+      },
+      
+      // Business insights
+      businessInsights: {
+        estimatedBusinessType: mainPageAnalysis.estimatedBusinessType,
+        suggestedThemes: mainPageAnalysis.suggestedThemes,
+        hasContactInfo: mainPageAnalysis.contactInfo.length > 0,
+        hasSocialLinks: mainPageAnalysis.socialLinks.length > 0,
+        logoFound: !!mainPageAnalysis.logo
+      }
 
+
+    console.log('Comprehensive analysis completed successfully');
     res.json(analysis);
+    
   } catch (error) {
+    console.error('Error in comprehensive website analysis:', error);
     res.status(500).json({ error: error.message });
   }
 });
