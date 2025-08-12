@@ -972,6 +972,40 @@ function suggestThemes($) {
   return themes.slice(0, 3);
 }
 
+// Temporary database setup endpoint (remove after use)
+app.post('/api/setup-database', async (req, res) => {
+  try {
+    console.log('Setting up database tables...');
+    
+    const setupSQL = `
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+      
+      CREATE TABLE IF NOT EXISTS jobs (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        website TEXT NOT NULL,
+        email TEXT,
+        theme VARCHAR(50) NOT NULL,
+        business_type VARCHAR(50) NOT NULL,
+        status TEXT NOT NULL,
+        job_type VARCHAR(50) DEFAULT 'clone',
+        demo_urls JSONB,
+        mockup_url TEXT,
+        generated_html TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    
+    await pool.query(setupSQL);
+    console.log('Database tables created successfully');
+    
+    res.json({ success: true, message: 'Database initialized successfully' });
+  } catch (error) {
+    console.error('Database setup error:', error);
+    res.status(500).json({ error: 'Failed to setup database: ' + error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('Server running on port', PORT);
