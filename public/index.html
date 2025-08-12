@@ -425,6 +425,114 @@
         background: #5a6fd8;
       }
       
+      .analysis-section {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+      }
+      
+      .section-header {
+        background: #f0f0f0;
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .section-header:hover {
+        background: #e0e0e0;
+      }
+      
+      .section-content {
+        padding: 1.5rem;
+        display: none;
+      }
+      
+      .section-content.active {
+        display: block;
+      }
+      
+      .section-header::after {
+        content: '▼';
+        font-size: 0.8rem;
+        transition: transform 0.3s ease;
+      }
+      
+      .section-header.active::after {
+        transform: rotate(180deg);
+      }
+      
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+      
+      .metric-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .metric-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+      }
+      
+      .metric-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+      }
+      
+      .keyword-tag {
+        background: #667eea;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin: 0.25rem;
+        display: inline-block;
+      }
+      
+      .page-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        border-left: 4px solid #28a745;
+      }
+      
+      .page-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+      
+      .page-url {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        word-break: break-all;
+      }
+      
+      .page-stats {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #888;
+      }
+      
       @media (max-width: 768px) {
         .container {
           padding: 1rem;
@@ -452,6 +560,7 @@
   <body>
     <div class="container">
       <div class="header">
+        <img src="lab007 grey.PNG" alt="LAB007 AI Website Redesigner - Transform your existing website with AI-powered modern design" style="max-width: 300px; height: auto; margin-bottom: 1rem;">
         <h1>AI Website Redesigner</h1>
         <p>Transform your existing website with AI-powered modern design</p>
       </div>
@@ -473,6 +582,72 @@
             <div id="analysis-results" class="analysis-results">
               <h3>Website Analysis Results</h3>
               <div id="analysis-content"></div>
+              
+              <!-- Comprehensive Analysis Sections -->
+              <div id="comprehensive-analysis" style="display: none;">
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('page-structure')" class="section-header">
+                    📊 Page Structure & Content
+                  </h4>
+                  <div id="page-structure" class="section-content">
+                    <div id="page-structure-content"></div>
+                  </div>
+                </div>
+                
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('seo-insights')" class="section-header">
+                    🔍 SEO & Performance Insights
+                  </h4>
+                  <div id="seo-insights" class="section-content">
+                    <div id="seo-insights-content"></div>
+                  </div>
+                </div>
+                
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('link-health')" class="section-header">
+                    🔗 Link Health & Navigation
+                  </h4>
+                  <div id="link-health" class="section-content">
+                    <div id="link-health-content"></div>
+                  </div>
+                </div>
+                
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('keywords')" class="section-header">
+                    🏷️ Top Keywords & Content
+                  </h4>
+                  <div id="keywords" class="section-content">
+                    <div id="keywords-content"></div>
+                  </div>
+                </div>
+                
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('page-content')" class="section-header">
+                    📄 Page Content & Details
+                  </h4>
+                  <div id="page-content" class="section-content">
+                    <div id="page-content-content"></div>
+                  </div>
+                </div>
+                
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('meta-data')" class="section-header">
+                    📋 Meta Data Summary
+                  </h4>
+                  <div id="meta-data" class="section-content">
+                    <div id="meta-data-content"></div>
+                  </div>
+                </div>
+                
+                <div class="analysis-section">
+                  <h4 onclick="toggleSection('navigation-analysis')" class="section-header">
+                    🧭 Navigation Analysis
+                  </h4>
+                  <div id="navigation-analysis" class="section-content">
+                    <div id="navigation-analysis-content"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -615,6 +790,12 @@
               }).join('') +
               '</div></div>' +
               (data.logo ? '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>' : '');
+            
+            // Show comprehensive analysis if available
+            if (data.totalPages !== undefined) {
+              document.getElementById('comprehensive-analysis').style.display = 'block';
+              populateComprehensiveAnalysis(data);
+            }
             
             analysisResults.style.display = 'block';
             
@@ -937,6 +1118,179 @@
         }
         return url;
       }
+          
+      function populateComprehensiveAnalysis(data) {
+            // Page Structure & Content
+            const pageStructureContent = document.getElementById('page-structure-content');
+            pageStructureContent.innerHTML = 
+              '<div class="metric-grid">' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.totalPages + '</div>' +
+                  '<div class="metric-label">Total Pages Found</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.navigationPages + '</div>' +
+                  '<div class="metric-label">Navigation Pages</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.analyzedPages + '</div>' +
+                  '<div class="metric-label">Pages Analyzed</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.averageWordsPerPage + '</div>' +
+                  '<div class="metric-label">Avg Words/Page</div>' +
+                '</div>' +
+              '</div>' +
+              '<h5>Content Overview:</h5>' +
+              '<div class="metric-grid">' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.totalImages + '</div>' +
+                  '<div class="metric-label">Total Images</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.totalHeadings.h1 + '</div>' +
+                  '<div class="metric-label">H1 Headings</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.totalHeadings.h2 + '</div>' +
+                  '<div class="metric-label">H2 Headings</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.totalHeadings.h3 + '</div>' +
+                  '<div class="metric-label">H3 Headings</div>' +
+                '</div>' +
+              '</div>' +
+              (data.navigation && data.navigation.totalLinks > 0 ? 
+                '<h5>Navigation Structure:</h5>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.navigation.totalLinks + ' Menu Items</div>' +
+                  '<div class="metric-label">Main Navigation Links</div>' +
+                '</div>' : '');
+            
+            // SEO Insights
+            const seoContent = document.getElementById('seo-insights-content');
+            seoContent.innerHTML = 
+              '<div class="metric-grid">' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + (data.seoInsights.titleOptimal ? '✅' : '❌') + '</div>' +
+                  '<div class="metric-label">Title Length (' + data.seoInsights.titleLength + ' chars)</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + (data.seoInsights.descriptionOptimal ? '✅' : '❌') + '</div>' +
+                  '<div class="metric-label">Description Length (' + data.seoInsights.descriptionLength + ' chars)</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + (data.seoInsights.hasTitle ? '✅' : '❌') + '</div>' +
+                  '<div class="metric-label">Has Title Tag</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + (data.seoInsights.hasDescription ? '✅' : '❌') + '</div>' +
+                  '<div class="metric-label">Has Meta Description</div>' +
+                '</div>' +
+              '</div>';
+            
+            // Link Health
+            const linkHealthContent = document.getElementById('link-health-content');
+            linkHealthContent.innerHTML = 
+              '<div class="metric-grid">' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.linkHealth.internalLinks + '</div>' +
+                  '<div class="metric-label">Internal Pages</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.linkHealth.navigationLinks + '</div>' +
+                  '<div class="metric-label">Navigation Links</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.linkHealth.externalLinks + '</div>' +
+                  '<div class="metric-label">External Links</div>' +
+                '</div>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.linkHealth.deadLinks + '</div>' +
+                  '<div class="metric-label">Dead Links</div>' +
+                '</div>' +
+              '</div>' +
+              (data.linkHealth.deadLinks > 0 ? 
+                '<div class="metric-card" style="margin-top: 1rem; border-left-color: #dc3545;">' +
+                  '<div class="metric-value" style="color: #dc3545;">' + data.linkHealth.deadLinkPercentage + '%</div>' +
+                  '<div class="metric-label">Dead Link Percentage</div>' +
+                '</div>' : '');
+            
+            // Keywords
+            const keywordsContent = document.getElementById('keywords-content');
+            keywordsContent.innerHTML = 
+              '<h5>Top 20 Keywords:</h5>' +
+              '<div style="margin: 1rem 0;">' +
+                data.topKeywords.map(function(keyword) {
+                  return '<span class="keyword-tag">' + keyword.word + ' (' + keyword.count + ')</span>';
+                }).join('') +
+              '</div>';
+            
+            // Page Content
+            const pageContentDiv = document.getElementById('page-content-content');
+            pageContentDiv.innerHTML = 
+              '<h5>Analyzed Pages:</h5>' +
+              data.pageContent.map(function(page) {
+                return '<div class="page-item">' +
+                  '<div class="page-title">' + page.title + '</div>' +
+                  '<div class="page-url">' + page.url + '</div>' +
+                  '<div class="page-stats">' +
+                    '<span>Words: ' + page.wordCount + '</span>' +
+                    '<span>Content: ' + page.content.substring(0, 100) + '...</span>' +
+                  '</div>' +
+                '</div>';
+              }).join('');
+            
+            // Meta Data
+            const metaDataContent = document.getElementById('meta-data-content');
+            metaDataContent.innerHTML = 
+              '<h5>Meta Tags Found:</h5>' +
+              Object.entries(data.metaDataSummary).map(function([name, values]) {
+                return '<div class="analysis-item">' +
+                  '<strong>' + name + ':</strong> ' +
+                  values.join(', ') +
+                '</div>';
+              }).join('');
+
+            // Navigation Analysis
+            const navigationAnalysisContent = document.getElementById('navigation-analysis-content');
+            if (data.navigation && data.navigation.links && data.navigation.links.length > 0) {
+              navigationAnalysisContent.innerHTML = 
+                '<h5>Navigation Links Found:</h5>' +
+                '<div class="metric-card">' +
+                  '<div class="metric-value">' + data.navigation.totalLinks + '</div>' +
+                  '<div class="metric-label">Total Navigation Items</div>' +
+                '</div>' +
+                '<h6>Navigation Structure:</h6>' +
+                data.navigation.links.map(function(linkUrl) {
+                  const linkText = linkUrl.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Home';
+                  return '<div class="page-item">' +
+                    '<div class="page-title">' + linkText + '</div>' +
+                    '<div class="page-url">' + linkUrl + '</div>' +
+                  '</div>';
+                }).join('');
+            } else {
+              navigationAnalysisContent.innerHTML = 
+                '<div class="metric-card">' +
+                  '<div class="metric-value">0</div>' +
+                  '<div class="metric-label">Navigation Links Found</div>' +
+                '</div>' +
+                '<p>No clear navigation structure detected. This might be a single-page website or navigation is implemented differently.</p>';
+            }
+          }
+          
+          function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const header = section.previousElementSibling;
+            
+            if (section.classList.contains('active')) {
+              section.classList.remove('active');
+              header.classList.remove('active');
+            } else {
+              section.classList.add('active');
+              header.classList.add('active');
+            }
+          }
     </script>
   </body>
 </html>

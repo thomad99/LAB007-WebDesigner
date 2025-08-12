@@ -681,43 +681,90 @@ app.post('/api/analyze-website', async (req, res) => {
     // 2. Extract all internal links to discover pages
     const internalLinks = new Set();
     const externalLinks = new Set();
+    const navigationLinks = new Set();
     const allLinks = $('a[href]');
     
-    allLinks.each((i, el) => {
+    console.log('Total links found on main page:', allLinks.length);
+    
+    allLinks.each(function(i, el) {
       const href = $(el).attr('href');
       if (href) {
-        const absoluteUrl = new URL(href, website).href;
-        if (absoluteUrl.startsWith(website)) {
-          internalLinks.add(absoluteUrl);
-        } else if (href.startsWith('http')) {
-          externalLinks.add(absoluteUrl);
+        try {
+          const absoluteUrl = new URL(href, website).href;
+          const linkText = $(el).text().trim();
+          const linkClasses = $(el).attr('class') || '';
+          const parentElement = $(el).parent();
+          const isInNav = $(el).closest('nav, .nav, .navbar, .navigation, .menu, .header, header').length > 0;
+          
+          if (absoluteUrl.startsWith(website)) {
+            // Filter out cart, shop, checkout, admin pages
+            if (!absoluteUrl.includes('/cart') && 
+                !absoluteUrl.includes('/shop') && 
+                !absoluteUrl.includes('/checkout') && 
+                !absoluteUrl.includes('/admin') &&
+                !absoluteUrl.includes('/login') &&
+                !absoluteUrl.includes('/register') &&
+                !absoluteUrl.includes('/account') &&
+                !absoluteUrl.includes('/user') &&
+                !absoluteUrl.includes('/search') &&
+                !absoluteUrl.includes('/tag') &&
+                !absoluteUrl.includes('/category') &&
+                !absoluteUrl.includes('/page/') &&
+                !absoluteUrl.includes('/comment') &&
+                !absoluteUrl.includes('/reply')) {
+              
+              internalLinks.add(absoluteUrl);
+              
+              // Track navigation links specifically
+              if (isInNav || 
+                  linkClasses.includes('nav') || 
+                  linkClasses.includes('menu') || 
+                  linkClasses.includes('link') ||
+                  parentElement.is('nav') ||
+                  parentElement.hasClass('nav') ||
+                  parentElement.hasClass('menu') ||
+                  parentElement.hasClass('navigation')) {
+                navigationLinks.add(absoluteUrl);
+                console.log('Navigation link found:', linkText, '->', absoluteUrl);
+              }
+            }
+          } else if (href.startsWith('http')) {
+            externalLinks.add(absoluteUrl);
+          }
+        } catch (error) {
+          console.log('Invalid URL:', href);
         }
       }
     });
+    
+    console.log('Navigation links found:', navigationLinks.size);
+    console.log('Total internal pages found:', internalLinks.size);
+    console.log('External links found:', externalLinks.size);
     
     // 3. Crawl internal pages to get comprehensive data
     const pageAnalysis = [];
     const allMetaData = new Map();
     const allKeywords = new Map();
     const deadLinks = [];
+    const pageContent = [];
     
-    console.log(`Found ${internalLinks.size} internal pages to analyze`);
+    console.log('Found ' + internalLinks.size + ' internal pages to analyze');
     
-    // Limit to first 10 pages for performance
-    const pagesToAnalyze = Array.from(internalLinks).slice(0, 10);
+    // Limit to first 15 pages for performance
+    const pagesToAnalyze = Array.from(internalLinks).slice(0, 15);
     
     for (const pageUrl of pagesToAnalyze) {
       try {
-        console.log(`Analyzing page: ${pageUrl}`);
+        console.log('Analyzing page: ' + pageUrl);
         const pageResponse = await axios.get(pageUrl, { timeout: 10000 });
         const page$ = cheerio.load(pageResponse.data);
         
         // Extract page-specific data
         const pageData = {
           url: pageUrl,
-          title: page$.('title').text().trim(),
-          metaDescription: page$.('meta[name="description"]').attr('content') || '',
-          metaKeywords: page$.('meta[name="keywords"]').attr('content') || '',
+          title: page$('title').text().trim(),
+          metaDescription: page$('meta[name="description"]').attr('content') || '',
+          metaKeywords: page$('meta[name="keywords"]').attr('content') || '',
           h1Count: page$('h1').length,
           h2Count: page$('h2').length,
           h3Count: page$('h3').length,
@@ -728,8 +775,19 @@ app.post('/api/analyze-website', async (req, res) => {
         
         pageAnalysis.push(pageData);
         
+        // Store page content for display
+        const pageText = page$('body').text().trim();
+        if (pageText.length > 100) {
+          pageContent.push({
+            url: pageUrl,
+            title: pageData.title,
+            content: pageText.substring(0, 500) + '...',
+            wordCount: pageData.wordCount
+          });
+        }
+        
         // Collect meta data
-        page$.('meta').each((i, el) => {
+        page$('meta').each(function(i, el) {
           const name = page$(el).attr('name') || page$(el).attr('property');
           const content = page$(el).attr('content');
           if (name && content) {
@@ -741,22 +799,22 @@ app.post('/api/analyze-website', async (req, res) => {
         });
         
         // Extract keywords from content
-        const pageText = page$('body').text().toLowerCase();
-        const words = pageText.match(/\b[a-z]{3,}\b/g) || [];
-        words.forEach(word => {
+        const pageTextLower = pageText.toLowerCase();
+        const words = pageTextLower.match(/\b[a-z]{3,}\b/g) || [];
+        words.forEach(function(word) {
           if (word.length > 3) {
             allKeywords.set(word, (allKeywords.get(word) || 0) + 1);
           }
         });
         
       } catch (error) {
-        console.log(`Failed to analyze page ${pageUrl}:`, error.message);
+        console.log('Failed to analyze page ' + pageUrl + ':', error.message);
         deadLinks.push(pageUrl);
       }
     }
     
     // 4. Check external links for dead links
-    console.log(`Checking ${externalLinks.size} external links for health...`);
+    console.log('Checking ' + externalLinks.size + ' external links for health...');
     const externalLinkChecks = Array.from(externalLinks).slice(0, 20); // Limit external checks
     
     for (const externalUrl of externalLinkChecks) {
@@ -775,7 +833,7 @@ app.post('/api/analyze-website', async (req, res) => {
       description: $('meta[name="description"]').attr('content') || '',
       logo: findLogo($),
       navigation: extractNavigation($),
-      headings: $('h1, h2, h3').map((i, el) => $(el).text().trim()).get().slice(0, 5),
+      headings: $('h1, h2, h3').map(function(i, el) { return $(el).text().trim(); }).get().slice(0, 5),
       contactInfo: extractContactInfo($),
       socialLinks: extractSocialLinks($),
       estimatedBusinessType: estimateBusinessType($),
@@ -789,23 +847,26 @@ app.post('/api/analyze-website', async (req, res) => {
       
       // Page structure
       totalPages: internalLinks.size,
+      navigationPages: navigationLinks.size,
       analyzedPages: pageAnalysis.length,
-      averageWordsPerPage: Math.round(pageAnalysis.reduce((sum, page) => sum + page.wordCount, 0) / pageAnalysis.length),
+      averageWordsPerPage: pageAnalysis.length > 0 ? Math.round(pageAnalysis.reduce(function(sum, page) { return sum + page.wordCount; }, 0) / pageAnalysis.length) : 0,
       
       // Content analysis
-      totalImages: pageAnalysis.reduce((sum, page) => sum + page.imageCount, 0),
+      totalImages: pageAnalysis.reduce(function(sum, page) { return sum + page.imageCount; }, 0),
       totalHeadings: {
-        h1: pageAnalysis.reduce((sum, page) => sum + page.h1Count, 0),
-        h2: pageAnalysis.reduce((sum, page) => sum + page.h2Count, 0),
-        h3: pageAnalysis.reduce((sum, page) => sum + page.h3Count, 0)
+        h1: pageAnalysis.reduce(function(sum, page) { return sum + page.h1Count; }, 0),
+        h2: pageAnalysis.reduce(function(sum, page) { return sum + page.h2Count; }, 0),
+        h3: pageAnalysis.reduce(function(sum, page) { return sum + page.h3Count; }, 0)
       },
       
       // Meta data summary
       metaDataSummary: Object.fromEntries(
-        Array.from(allMetaData.entries()).map(([name, values]) => [
-          name, 
-          Array.from(values).slice(0, 5) // Show first 5 unique values
-        ])
+        Array.from(allMetaData.entries()).map(function(entry) {
+          return [
+            entry[0], 
+            Array.from(entry[1]).slice(0, 5) // Show first 5 unique values
+          ];
+        })
       ),
       
       // Top keywords (most frequent)
@@ -817,6 +878,7 @@ app.post('/api/analyze-website', async (req, res) => {
       // Link health
       linkHealth: {
         internalLinks: internalLinks.size,
+        navigationLinks: navigationLinks.size,
         externalLinks: externalLinks.size,
         deadLinks: deadLinks.length,
         deadLinkPercentage: Math.round((deadLinks.length / (internalLinks.size + externalLinks.size)) * 100)
@@ -846,8 +908,20 @@ app.post('/api/analyze-website', async (req, res) => {
         hasContactInfo: mainPageAnalysis.contactInfo.length > 0,
         hasSocialLinks: mainPageAnalysis.socialLinks.length > 0,
         logoFound: !!mainPageAnalysis.logo
+      },
+      
+      // Page content for display
+      pageContent: pageContent,
+      
+      // Raw page analysis data
+      pageAnalysis: pageAnalysis,
+      
+      // Navigation analysis
+      navigation: {
+        totalLinks: navigationLinks.size,
+        links: Array.from(navigationLinks)
       }
-
+    };
 
     console.log('Comprehensive analysis completed successfully');
     res.json(analysis);
