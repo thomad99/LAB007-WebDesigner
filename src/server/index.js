@@ -654,6 +654,8 @@ app.get('/', (req, res) => {
             border-radius: 15px;
             transition: all 0.3s ease;
             font-weight: 600;
+            position: relative;
+            overflow: hidden;
           }
           
           .option-button:hover {
@@ -661,11 +663,32 @@ app.get('/', (req, res) => {
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
           }
           
+          .option-button:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 10px rgba(102, 126, 234, 0.3);
+          }
+          
           .option-button.active {
             background: #667eea;
             color: white;
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+          }
+          
+          .option-button.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+          }
+          
+          @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
           }
           
           .form-section {
@@ -742,6 +765,8 @@ app.get('/', (req, res) => {
             transition: all 0.3s ease;
             width: 100%;
             margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
           }
           
           .submit-btn:hover {
@@ -749,11 +774,35 @@ app.get('/', (req, res) => {
             box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
           }
           
+          .submit-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+          }
+          
           .submit-btn:disabled {
             background: #6c757d;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+          }
+          
+          .submit-btn:disabled::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
           
           #status-box {
@@ -1051,11 +1100,20 @@ app.get('/', (req, res) => {
             </form>
             
             <div id="status-box"></div>
+            
+            <!-- Debug Panel -->
+            <div id="debug-panel" style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; font-family: monospace; font-size: 12px;">
+              <h4>Debug Information</h4>
+              <div id="debug-info">Loading...</div>
+              <button onclick="testFrontend()" style="margin-top: 0.5rem; padding: 0.5rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Frontend</button>
+            </div>
           </div>
         </div>
         
         <script>
           document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing application...');
+            
             const form = document.getElementById('redesign-form');
             const statusBox = document.getElementById('status-box');
             const optionButtons = document.querySelectorAll('.option-button');
@@ -1064,15 +1122,26 @@ app.get('/', (req, res) => {
             const analysisContent = document.getElementById('analysis-content');
             const submitBtn = document.getElementById('submit-btn');
 
+            console.log('Elements found:', {
+              form: !!form,
+              statusBox: !!statusBox,
+              optionButtons: optionButtons.length,
+              analyzeBtn: !!analyzeBtn,
+              analysisResults: !!analysisResults,
+              analysisContent: !!analysisContent,
+              submitBtn: !!submitBtn
+            });
+
             let selectedOption = 'clone';
             let isAnalyzing = false;
 
             // Option button handling
             optionButtons.forEach(button => {
-              button.addEventListener('click', () => {
+              button.addEventListener('click', function() {
+                console.log('Option button clicked:', this.dataset.option);
                 optionButtons.forEach(b => b.classList.remove('active'));
-                button.classList.add('active');
-                selectedOption = button.dataset.option;
+                this.classList.add('active');
+                selectedOption = this.dataset.option;
                 
                 // Update button text based on option
                 if (selectedOption === 'clone') {
@@ -1080,11 +1149,14 @@ app.get('/', (req, res) => {
                 } else {
                   submitBtn.innerHTML = 'Generate Website Mockup';
                 }
+                
+                console.log('Selected option:', selectedOption);
               });
             });
 
             // Website analysis
             analyzeBtn.addEventListener('click', async function() {
+              console.log('Analyze button clicked');
               const website = document.getElementById('website').value;
               if (!website) {
                 alert('Please enter a website URL first');
@@ -1098,6 +1170,7 @@ app.get('/', (req, res) => {
               analyzeBtn.innerHTML = 'Analyzing...';
               
               try {
+                console.log('Making analysis request for:', website);
                 const response = await fetch('/api/analyze-website', {
                   method: 'POST',
                   headers: {
@@ -1107,6 +1180,7 @@ app.get('/', (req, res) => {
                 });
                 
                 const data = await response.json();
+                console.log('Analysis response:', data);
                 
                 if (data.error) {
                   throw new Error(data.error);
@@ -1135,7 +1209,10 @@ app.get('/', (req, res) => {
                   document.getElementById('businessType').value = data.estimatedBusinessType;
                 }
                 
+                console.log('Analysis completed successfully');
+                
               } catch (error) {
+                console.error('Analysis error:', error);
                 alert('Error analyzing website: ' + error.message);
               } finally {
                 isAnalyzing = false;
@@ -1146,17 +1223,31 @@ app.get('/', (req, res) => {
 
             // Theme selection from suggestions
             window.selectTheme = function(theme) {
+              console.log('Theme selected:', theme);
               document.getElementById('theme').value = theme;
             };
 
             // Form submission
             form.addEventListener('submit', async function(e) {
               e.preventDefault();
+              console.log('Form submitted');
               
               if (isAnalyzing) {
                 alert('Please wait for website analysis to complete');
                 return;
               }
+              
+              const website = document.getElementById('website').value;
+              const email = document.getElementById('email').value;
+              const theme = document.getElementById('theme').value;
+              const businessType = document.getElementById('businessType').value;
+              
+              if (!website || !theme || !businessType) {
+                alert('Please fill in all required fields');
+                return;
+              }
+              
+              console.log('Form data:', { website, email, theme, businessType, selectedOption });
               
               statusBox.className = 'status-active status-loading';
               statusBox.innerHTML = '<div class="progress-container">' +
@@ -1169,10 +1260,10 @@ app.get('/', (req, res) => {
                 '</div>';
 
               const formData = {
-                website: normalizeUrl(form.website.value),
-                email: form.email.value,
-                theme: form.theme.value,
-                businessType: form.businessType.value
+                website: normalizeUrl(website),
+                email: email,
+                theme: theme,
+                businessType: businessType
               };
 
               try {
@@ -1191,6 +1282,8 @@ app.get('/', (req, res) => {
                 });
                 
                 const data = await response.json();
+                console.log('Response received:', data);
+                
                 if (data.error) {
                   throw new Error(data.error);
                 }
@@ -1369,7 +1462,59 @@ app.get('/', (req, res) => {
                 alert('Link copied to clipboard!');
               });
             }
+            
+            console.log('Application initialized successfully');
+            
+            // Update debug info
+            updateDebugInfo();
           });
+
+          function updateDebugInfo() {
+            const debugInfo = document.getElementById('debug-info');
+            if (debugInfo) {
+              debugInfo.innerHTML = '<div><strong>Form Elements:</strong> ' + (document.getElementById('redesign-form') ? 'Found' : 'Missing') + '</div>' +
+                '<div><strong>Option Buttons:</strong> ' + document.querySelectorAll('.option-button').length + ' found</div>' +
+                '<div><strong>Analyze Button:</strong> ' + (document.getElementById('analyze-btn') ? 'Found' : 'Missing') + '</div>' +
+                '<div><strong>Submit Button:</strong> ' + (document.getElementById('submit-btn') ? 'Found' : 'Missing') + '</div>' +
+                '<div><strong>Status Box:</strong> ' + (document.getElementById('status-box') ? 'Found' : 'Missing') + '</div>' +
+                '<div><strong>Selected Option:</strong> ' + (window.selectedOption || 'None') + '</div>' +
+                '<div><strong>Website URL:</strong> ' + (document.getElementById('website') ? document.getElementById('website').value : 'Not set') + '</div>' +
+                '<div><strong>Theme:</strong> ' + (document.getElementById('theme') ? document.getElementById('theme').value : 'Not set') + '</div>' +
+                '<div><strong>Business Type:</strong> ' + (document.getElementById('businessType') ? document.getElementById('businessType').value : 'Not set') + '</div>';
+            }
+          }
+
+          function testFrontend() {
+            console.log('Testing frontend functionality...');
+            
+            // Test option buttons
+            const optionButtons = document.querySelectorAll('.option-button');
+            optionButtons.forEach((button, index) => {
+              console.log(`Testing button ${index}:`, button.dataset.option);
+              button.click();
+              setTimeout(() => {
+                console.log(`Button ${index} active state:`, button.classList.contains('active'));
+              }, 100);
+            });
+            
+            // Test form validation
+            const form = document.getElementById('redesign-form');
+            if (form) {
+              console.log('Testing form submission...');
+              const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+              form.dispatchEvent(submitEvent);
+            }
+            
+            // Test analyze button
+            const analyzeBtn = document.getElementById('analyze-btn');
+            if (analyzeBtn) {
+              console.log('Testing analyze button...');
+              analyzeBtn.click();
+            }
+            
+            updateDebugInfo();
+            console.log('Frontend test completed');
+          }
 
           function normalizeUrl(url) {
             if (!url) return url;
