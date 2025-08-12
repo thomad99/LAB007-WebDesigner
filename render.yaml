@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: lab007-website-cloner
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        value: dpg-culanb8gph6c73d9jl50-a
+      - key: DB_USER
+        value: sail1
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: sail_exks
+      - key: PORT
+        value: 3000
+    autoDeploy: true
+
+databases:
+  - name: website-cloner-db
+    databaseName: website_cloner
+    user: website_cloner
+    plan: free 
