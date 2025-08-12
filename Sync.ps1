@@ -14,13 +14,30 @@ if ($changes) {
     $changes
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    git commit -m "Auto-sync $timestamp"
+    
+    # Commit with error handling
+    try {
+        git commit -m "Auto-sync $timestamp"
+        Write-Output "Commit successful"
+    }
+    catch {
+        Write-Output "Commit failed: $_"
+        exit 1
+    }
 
-    Write-Output "⬆️ Force pushing local changes to GitHub..."
-    git push origin main --force
-    Write-Output "✅ Force sync complete at $timestamp"
+    Write-Output "Pushing local changes to GitHub..."
+    
+    # Use force-with-lease for safety
+    try {
+        git push origin main --force-with-lease
+        Write-Output "Sync complete at $timestamp"
+    }
+    catch {
+        Write-Output "Push failed: $_"
+        Write-Output "Try: git pull origin main first, then run sync again"
+        exit 1
+    }
 }
 else {
-    Write-Output "🟢 No changes to sync."
+    Write-Output "No changes to sync."
 }
-

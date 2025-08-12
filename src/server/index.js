@@ -174,7 +174,7 @@ Generate complete, production-ready HTML/CSS code that can be immediately used.`
     console.log('📝 AI Prompt built successfully');
     console.log('🤖 Calling OpenAI API...');
     console.log(`📊 Prompt length: ${prompt.length} characters`);
-    
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -474,7 +474,7 @@ Style: Professional website mockup, clean design, modern UI, business-appropriat
     console.log('📝 DALL-E prompt built successfully');
     console.log(`📊 Prompt length: ${prompt.length} characters`);
     console.log('🎨 Calling DALL-E API...');
-    
+
     const image = await openai.images.generate({
       model: "dall-e-3",
       prompt: prompt,
@@ -1073,7 +1073,7 @@ app.get('/', (req, res) => {
             const analysisResults = document.getElementById('analysis-results');
             const analysisContent = document.getElementById('analysis-content');
             const submitBtn = document.getElementById('submit-btn');
-            
+
             let selectedOption = 'clone';
             let isAnalyzing = false;
 
@@ -1187,7 +1187,7 @@ app.get('/', (req, res) => {
                   '<p id="current-step">Initializing...</p>' +
                   '<div class="step-details" id="step-details"></div>' +
                   '</div>';
-              
+
               const formData = {
                 website: normalizeUrl(form.website.value),
                 email: form.email.value,
@@ -1339,7 +1339,7 @@ app.get('/', (req, res) => {
                 // Update the UI
                 updateProgress(progress, currentStep);
                 document.getElementById('step-details').innerHTML = stepDetails;
-                
+
                 // Show current status
                 const statusText = data.status || 'Processing...';
                 let statusIcon = '⏳';
@@ -1355,13 +1355,13 @@ app.get('/', (req, res) => {
                 } else if (data.status === 'completed') {
                   statusBox.className = 'status-active status-success';
                   
-                                      if (data.mockupUrl) {
+                  if (data.mockupUrl) {
                       statusBox.innerHTML += '<div class="mockup-result"><h3>🎨 Your Website Mockup:</h3>' +
                         '<img src="' + data.mockupUrl + '" alt="Website Mockup">' +
                         '<div class="download-section">' +
                         '<a href="' + data.mockupUrl + '" download="website-mockup.png" class="download-btn">📥 Download Mockup</a>' +
                         '</div></div>';
-                    } else if (data.demoUrls) {
+                  } else if (data.demoUrls) {
                       statusBox.innerHTML += '<div class="demo-links"><h3>🚀 Your Redesigned Website:</h3>' + 
                         data.demoUrls.map(function(url) {
                           return '<div class="demo-item">' +
