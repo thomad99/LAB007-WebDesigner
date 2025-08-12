@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LAB007 AI Website Redesigner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      
+      .header {
+        text-align: center;
+        margin-bottom: 3rem;
+        color: white;
+      }
+      
+      .header h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      }
+      
+      .header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+      }
+      
+      .main-content {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      }
+      
+      .option-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        justify-content: center;
+      }
+      
+      .option-button {
+        flex: 1;
+        max-width: 200px;
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        border: 2px solid #667eea;
+        background: white;
+        color: #667eea;
+        cursor: pointer;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .option-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+      
+      .option-button:active {
+        transform: translateY(0);
+        box-shadow: 0 5px 10px rgba(102, 126, 234, 0.3);
+      }
+      
+      .option-button.active {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+      
+      .option-button.active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        animation: shimmer 2s infinite;
+      }
+      
+      @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      
+      .form-section {
+        margin-bottom: 2rem;
+      }
+      
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+      
+      label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #555;
+      }
+      
+      input, select {
+        padding: 1rem;
+        font-size: 1rem;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        transition: border-color 0.3s ease;
+        font-family: inherit;
+      }
+      
+      input:focus, select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      
+      .analyze-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.3s ease;
+        margin-top: 0.5rem;
+      }
+      
+      .analyze-btn:hover {
+        background: #218838;
+      }
+      
+      .analyze-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+      
+      .submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1.5rem 3rem;
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+      }
+      
+      .submit-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+      }
+      
+      .submit-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      .submit-btn:disabled::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      #status-box {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border: 2px solid #e1e5e9;
+        border-radius: 15px;
+        display: none;
+        background: #f8f9fa;
+      }
+      
+      .status-active {
+        display: block !important;
+      }
+      
+      .status-loading {
+        text-align: center;
+        color: #667eea;
+      }
+      
+      .status-error {
+        border-color: #dc3545;
+        background: #f8d7da;
+        color: #721c24;
+      }
+      
+      .status-success {
+        border-color: #28a745;
+        background: #d4edda;
+        color: #155724;
+      }
+      
+      .progress-container {
+        text-align: center;
+      }
+      
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 1rem 0;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      }
+      
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        width: 0%;
+        transition: width 0.5s ease;
+        border-radius: 10px;
+      }
+      
+      .step-details {
+        margin-top: 1rem;
+        text-align: left;
+      }
+      
+      .step-info {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        margin: 0.5rem 0;
+      }
+      
+      .step-info.success {
+        border-left-color: #28a745;
+        background: #f8fff9;
+      }
+      
+      .step-info.error {
+        border-left-color: #dc3545;
+        background: #fff8f8;
+      }
+      
+      .step-info p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+      }
+      
+      .demo-item {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0.5rem 0;
+        justify-content: center;
+      }
+      
+      .demo-btn {
+        background: #667eea;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+        font-weight: 600;
+      }
+      
+      .demo-btn:hover {
+        background: #5a6fd8;
+      }
+      
+      .copy-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-size: 0.9rem;
+      }
+      
+      .copy-btn:hover {
+        background: #5a6268;
+      }
+      
+      .download-btn {
+        display: inline-block;
+        background: #28a745;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-top: 1rem;
+        transition: background-color 0.3s ease;
+        font-weight: 600;
+      }
+      
+      .download-btn:hover {
+        background: #218838;
+      }
+      
+      .mockup-result {
+        margin-top: 2rem;
+        text-align: center;
+      }
+      
+      .mockup-result img {
+        max-width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        margin-top: 1rem;
+      }
+      
+      .demo-links {
+        margin-top: 1rem;
+      }
+      
+      .demo-links a {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-radius: 8px;
+        margin: 0.5rem;
+        transition: background-color 0.3s ease;
+      }
+      
+      .demo-links a:hover {
+        background: #5a6fd8;
+      }
+      
+      .analysis-results {
+        background: #e8f4fd;
+        border: 1px solid #bee5eb;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        display: none;
+      }
+      
+      .analysis-results h3 {
+        color: #0c5460;
+        margin-bottom: 1rem;
+      }
+      
+      .analysis-item {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 5px;
+      }
+      
+      .suggestions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+      }
+      
+      .suggestion-tag {
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      
+      .suggestion-tag:hover {
+        background: #5a6fd8;
+      }
+      
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+        
+        .main-content {
+          padding: 2rem 1.5rem;
+        }
+        
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+        
+        .option-buttons {
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .option-button {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>AI Website Redesigner</h1>
+        <p>Transform your existing website with AI-powered modern design</p>
+      </div>
+      
+      <div class="main-content">
+        <div class="option-buttons">
+          <button type="button" class="option-button active" data-option="clone">Full Site Redesign</button>
+          <button type="button" class="option-button" data-option="mockup">Quick Mockup</button>
+        </div>
+
+        <form id="redesign-form">
+          <div class="form-section">
+            <div class="form-group full-width">
+              <label for="website">Your Current Website URL:</label>
+              <input type="url" id="website" name="website" required placeholder="https://example.com">
+              <button type="button" id="analyze-btn" class="analyze-btn">Analyze Website</button>
+            </div>
+            
+            <div id="analysis-results" class="analysis-results">
+              <h3>Website Analysis Results</h3>
+              <div id="analysis-content"></div>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">Your Email (Optional):</label>
+              <input type="email" id="email" name="email" placeholder="your@email.com">
+            </div>
+            
+            <div class="form-group">
+              <label for="theme">Preferred Style:</label>
+              <select id="theme" name="theme" required>
+                <option value="">Select a style</option>
+                <option value="clean-white">Clean White</option>
+                <option value="dark-black">Dark Black</option>
+                <option value="colorful">Colorful</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="businessType">Business Type:</label>
+            <select id="businessType" name="businessType" required>
+              <option value="">Select business type</option>
+              <option value="flower-shop">Flower Shop</option>
+              <option value="retail-store">Retail Store</option>
+              <option value="product-info">Product Information</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="tech">Tech</option>
+              <option value="pet-care">Pet Care</option>
+              <option value="local-business">Local Business</option>
+              <option value="blog">Blog</option>
+            </select>
+          </div>
+          
+          <button type="submit" id="submit-btn" class="submit-btn">
+            Generate Redesigned Website
+          </button>
+        </form>
+        
+        <div id="status-box"></div>
+        
+        <!-- Debug Panel -->
+        <div id="debug-panel" style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; font-family: monospace; font-size: 12px;">
+          <h4>Debug Information</h4>
+          <div id="debug-info">Loading...</div>
+          <button onclick="testFrontend()" style="margin-top: 0.5rem; padding: 0.5rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Frontend</button>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing application...');
+        
+        const form = document.getElementById('redesign-form');
+        const statusBox = document.getElementById('status-box');
+        const optionButtons = document.querySelectorAll('.option-button');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const analysisResults = document.getElementById('analysis-results');
+        const analysisContent = document.getElementById('analysis-content');
+        const submitBtn = document.getElementById('submit-btn');
+
+        console.log('Elements found:', {
+          form: !!form,
+          statusBox: !!statusBox,
+          optionButtons: optionButtons.length,
+          analyzeBtn: !!analyzeBtn,
+          analysisResults: !!analysisResults,
+          analysisContent: !!analysisContent,
+          submitBtn: !!submitBtn
+        });
+
+        let selectedOption = 'clone';
+        let isAnalyzing = false;
+
+        // Option button handling
+        optionButtons.forEach(function(button) {
+          button.addEventListener('click', function() {
+            console.log('Option button clicked:', this.dataset.option);
+            optionButtons.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            selectedOption = this.dataset.option;
+            
+            // Update button text based on option
+            if (selectedOption === 'clone') {
+              submitBtn.innerHTML = 'Generate Redesigned Website';
+            } else {
+              submitBtn.innerHTML = 'Generate Website Mockup';
+            }
+            
+            console.log('Selected option:', selectedOption);
+          });
+        });
+
+        // Website analysis
+        analyzeBtn.addEventListener('click', async function() {
+          console.log('Analyze button clicked');
+          const website = document.getElementById('website').value;
+          if (!website) {
+            alert('Please enter a website URL first');
+            return;
+          }
+          
+          if (isAnalyzing) return;
+          
+          isAnalyzing = true;
+          analyzeBtn.disabled = true;
+          analyzeBtn.innerHTML = 'Analyzing...';
+          
+          try {
+            console.log('Making analysis request for:', website);
+            const response = await fetch('/api/analyze-website', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ website: normalizeUrl(website) })
+            });
+            
+            const data = await response.json();
+            console.log('Analysis response:', data);
+            
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            
+            // Display analysis results
+            analysisContent.innerHTML = '<div class="analysis-item">' +
+              '<strong>Title:</strong> ' + (data.title || 'Not found') + '</div>' +
+              '<div class="analysis-item">' +
+              '<strong>Description:</strong> ' + (data.description || 'Not found') + '</div>' +
+              '<div class="analysis-item">' +
+              '<strong>Estimated Business Type:</strong> ' + data.estimatedBusinessType + '</div>' +
+              '<div class="analysis-item">' +
+              '<strong>Suggested Themes:</strong>' +
+              '<div class="suggestions">' +
+              data.suggestedThemes.map(function(theme) {
+                return '<span class="suggestion-tag" onclick="selectTheme(\'' + theme + '\')">' + theme + '</span>';
+              }).join('') +
+              '</div></div>' +
+              (data.logo ? '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>' : '');
+            
+            analysisResults.style.display = 'block';
+            
+            // Auto-fill business type if not already selected
+            if (!document.getElementById('businessType').value) {
+              document.getElementById('businessType').value = data.estimatedBusinessType;
+            }
+            
+            console.log('Analysis completed successfully');
+            
+          } catch (error) {
+            console.error('Analysis error:', error);
+            alert('Error analyzing website: ' + error.message);
+          } finally {
+            isAnalyzing = false;
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = 'Analyze Website';
+          }
+        });
+
+        // Theme selection from suggestions
+        window.selectTheme = function(theme) {
+          console.log('Theme selected:', theme);
+          document.getElementById('theme').value = theme;
+        };
+
+        // Form submission
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          console.log('Form submitted');
+          
+          if (isAnalyzing) {
+            alert('Please wait for website analysis to complete');
+            return;
+          }
+          
+          const website = document.getElementById('website').value;
+          const email = document.getElementById('email').value;
+          const theme = document.getElementById('theme').value;
+          const businessType = document.getElementById('businessType').value;
+          
+          if (!website || !theme || !businessType) {
+            alert('Please fill in all required fields');
+            return;
+          }
+          
+          console.log('Form data:', { website, email, theme, businessType, selectedOption });
+          
+          statusBox.className = 'status-active status-loading';
+          statusBox.innerHTML = '<div class="progress-container">' +
+            '<h3>Starting the redesign process...</h3>' +
+            '<div class="progress-bar">' +
+            '<div class="progress-fill" id="progress-fill"></div>' +
+            '</div>' +
+            '<p id="current-step">Initializing...</p>' +
+            '<div class="step-details" id="step-details"></div>' +
+            '</div>';
+
+          const formData = {
+            website: normalizeUrl(website),
+            email: email,
+            theme: theme,
+            businessType: businessType
+          };
+
+          try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Processing...';
+            
+            const endpoint = selectedOption === 'clone' ? '/api/clone-website' : '/api/create-mockup';
+            console.log('Making request to:', endpoint);
+            
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            console.log('Response received:', data);
+            
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            
+            console.log('Initial response received:', data);
+            updateProgress(10, 'Job started successfully');
+            
+            pollStatus(data.jobId);
+          } catch (error) {
+            console.error('Error in form submission:', error);
+            statusBox.className = 'status-active status-error';
+            statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
+              '<p><strong>Error:</strong> ' + error.message + '</p>' +
+              '<p>Please check your input and try again.</p>';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
+          }
+        });
+
+        async function pollStatus(jobId) {
+          try {
+            console.log('Polling status for job:', jobId);
+            const response = await fetch('/api/status/' + jobId);
+            const data = await response.json();
+            
+            if (data.error) {
+              console.error('Status check error:', data.error);
+              statusBox.className = 'status-active status-error';
+              statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
+                '<p><strong>Error:</strong> ' + data.error + '</p>';
+              return;
+            }
+
+            console.log('Status update for job', jobId, ':', data);
+            
+            // Update progress based on status
+            let progress = 0;
+            let currentStep = '';
+            let stepDetails = '';
+            
+            switch (data.status) {
+              case 'scraping':
+                progress = 25;
+                currentStep = 'Scraping Website Content';
+                stepDetails = '<div class="step-info">' +
+                  '<p><strong>What is happening:</strong> Analyzing your website structure and extracting content</p>' +
+                  '<p><strong>Current task:</strong> Reading HTML, finding logos, navigation, and content</p>' +
+                  '<p><strong>Website:</strong> ' + data.website + '</p>' +
+                  '</div>';
+                break;
+                
+              case 'analyzing':
+                progress = 50;
+                currentStep = 'AI Content Analysis';
+                stepDetails = '<div class="step-info">' +
+                  '<p><strong>What is happening:</strong> AI is processing your content and planning the redesign</p>' +
+                  '<p><strong>Current task:</strong> Understanding your business type and content structure</p>' +
+                  '<p><strong>Business:</strong> ' + document.getElementById('businessType').value + '</p>' +
+                  '</div>';
+                break;
+                
+              case 'generating':
+                if (data.jobType === 'mockup') {
+                  progress = 75;
+                  currentStep = 'Creating Website Mockup';
+                  stepDetails = '<div class="step-info">' +
+                    '<p><strong>What is happening:</strong> AI is generating a visual mockup of your redesigned website</p>' +
+                    '<p><strong>Current task:</strong> Using DALL-E to create a professional mockup</p>' +
+                    '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
+                    '</div>';
+                } else {
+                  progress = 75;
+                  currentStep = 'Generating Redesigned Website';
+                  stepDetails = '<div class="step-info">' +
+                    '<p><strong>What is happening:</strong> AI is creating your complete redesigned website</p>' +
+                    '<p><strong>Current task:</strong> Building HTML/CSS with modern design principles</p>' +
+                    '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
+                    '</div>';
+                }
+                break;
+                
+              case 'completed':
+                progress = 100;
+                currentStep = 'Process Completed!';
+                stepDetails = '<div class="step-info success">' +
+                  '<p><strong>Your ' + (data.jobType === 'mockup' ? 'mockup' : 'redesigned website') + ' is ready!</strong></p>' +
+                  '</div>';
+                break;
+                
+              default:
+                if (data.status.startsWith('error:')) {
+                  progress = 0;
+                  currentStep = 'Error Occurred';
+                  stepDetails = '<div class="step-info error">' +
+                    '<p><strong>Error:</strong> ' + data.status.replace('error: ', '') + '</p>' +
+                    '<p>Please try again or contact support if the problem persists.</p>' +
+                    '</div>';
+                } else {
+                  progress = 10;
+                  currentStep = 'Processing...';
+                  stepDetails = '<div class="step-info">' +
+                    '<p><strong>Status:</strong> ' + data.status + '</p>' +
+                    '<p>Please wait while we process your request...</p>' +
+                    '</div>';
+                }
+            }
+            
+            // Update the UI
+            updateProgress(progress, currentStep);
+            document.getElementById('step-details').innerHTML = stepDetails;
+            
+            // Continue polling if not completed or errored
+            if (data.status && !data.status.startsWith('error') && data.status !== 'completed') {
+              setTimeout(function() { pollStatus(jobId); }, 2000);
+            } else if (data.status === 'completed') {
+              statusBox.className = 'status-active status-success';
+              
+              if (data.mockupUrl) {
+                statusBox.innerHTML += '<div class="mockup-result"><h3>Your Website Mockup:</h3>' +
+                  '<img src="' + data.mockupUrl + '" alt="Website Mockup">' +
+                  '<div class="download-section">' +
+                  '<a href="' + data.mockupUrl + '" download="website-mockup.png" class="download-btn">Download Mockup</a>' +
+                  '</div></div>';
+              } else if (data.demoUrls) {
+                statusBox.innerHTML += '<div class="demo-links"><h3>Your Redesigned Website:</h3>' + 
+                  data.demoUrls.map(function(url) {
+                    return '<div class="demo-item">' +
+                      '<a href="' + url + '" target="_blank" class="demo-btn">View Redesigned Site</a>' +
+                      '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                      '</div>';
+                  }).join('') +
+                  '</div>';
+              }
+              
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
+            }
+          } catch (error) {
+            console.error('Error polling status:', error);
+            statusBox.className = 'status-active status-error';
+            statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
+              '<p><strong>Error:</strong> ' + error.message + '</p>' +
+              '<p>Please refresh the page and try again.</p>';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
+          }
+        }
+        
+        function updateProgress(percentage, step) {
+          const progressFill = document.getElementById('progress-fill');
+          const currentStepElement = document.getElementById('current-step');
+          
+          if (progressFill) {
+            progressFill.style.width = percentage + '%';
+          }
+          
+          if (currentStepElement) {
+            currentStepElement.textContent = step;
+          }
+          
+          console.log('Progress:', percentage + '% -', step);
+        }
+        
+        function copyToClipboard(text) {
+          navigator.clipboard.writeText(text).then(function() {
+            alert('Link copied to clipboard!');
+          }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Link copied to clipboard!');
+          });
+        }
+        
+        console.log('Application initialized successfully');
+        
+        // Update debug info
+        updateDebugInfo();
+      });
+
+      function updateDebugInfo() {
+        const debugInfo = document.getElementById('debug-info');
+        if (debugInfo) {
+          debugInfo.innerHTML = '<div><strong>Form Elements:</strong> ' + (document.getElementById('redesign-form') ? 'Found' : 'Missing') + '</div>' +
+            '<div><strong>Option Buttons:</strong> ' + document.querySelectorAll('.option-button').length + ' found</div>' +
+            '<div><strong>Analyze Button:</strong> ' + (document.getElementById('analyze-btn') ? 'Found' : 'Missing') + '</div>' +
+            '<div><strong>Submit Button:</strong> ' + (document.getElementById('submit-btn') ? 'Found' : 'Missing') + '</div>' +
+            '<div><strong>Status Box:</strong> ' + (document.getElementById('status-box') ? 'Found' : 'Missing') + '</div>' +
+            '<div><strong>Selected Option:</strong> ' + (window.selectedOption || 'None') + '</div>' +
+            '<div><strong>Website URL:</strong> ' + (document.getElementById('website') ? document.getElementById('website').value : 'Not set') + '</div>' +
+            '<div><strong>Theme:</strong> ' + (document.getElementById('theme') ? document.getElementById('theme').value : 'Not set') + '</div>' +
+            '<div><strong>Business Type:</strong> ' + (document.getElementById('businessType') ? document.getElementById('businessType').value : 'Not set') + '</div>';
+        }
+      }
+
+      function testFrontend() {
+        console.log('Testing frontend functionality...');
+        
+        // Test option buttons
+        const optionButtons = document.querySelectorAll('.option-button');
+        optionButtons.forEach(function(button, index) {
+          console.log('Testing button ' + index + ':', button.dataset.option);
+          button.click();
+          setTimeout(function() {
+            console.log('Button ' + index + ' active state:', button.classList.contains('active'));
+          }, 100);
+        });
+        
+        // Test form validation
+        const form = document.getElementById('redesign-form');
+        if (form) {
+          console.log('Testing form submission...');
+          const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+          form.dispatchEvent(submitEvent);
+        }
+        
+        // Test analyze button
+        const analyzeBtn = document.getElementById('analyze-btn');
+        if (analyzeBtn) {
+          console.log('Testing analyze button...');
+          analyzeBtn.click();
+        }
+        
+        updateDebugInfo();
+        console.log('Frontend test completed');
+      }
+
+      function normalizeUrl(url) {
+        if (!url) return url;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          return 'https://' + url;
+        }
+        return url;
+      }
+    </script>
+  </body>
+</html>
