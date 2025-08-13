@@ -696,120 +696,84 @@ app.post('/api/analyze-website', async (req, res) => {
           const parentElement = $(el).parent();
           const isInNav = $(el).closest('nav, .nav, .navbar, .navigation, .menu, .header, header').length > 0;
           
-          if (absoluteUrl.startsWith(website)) {
-            // Filter out cart, shop, checkout, admin pages
-            if (!absoluteUrl.includes('/cart') && 
-                !absoluteUrl.includes('/shop') && 
-                !absoluteUrl.includes('/checkout') && 
-                !absoluteUrl.includes('/admin') &&
-                !absoluteUrl.includes('/login') &&
-                !absoluteUrl.includes('/register') &&
-                !absoluteUrl.includes('/account') &&
-                !absoluteUrl.includes('/user') &&
-                !absoluteUrl.includes('/search') &&
-                !absoluteUrl.includes('/tag') &&
-                !absoluteUrl.includes('/category') &&
-                !absoluteUrl.includes('/page/') &&
-                !absoluteUrl.includes('/comment') &&
-                !absoluteUrl.includes('/reply')) {
-              
+          if (absoluteUrl.startsWith(website) && !absoluteUrl.includes('#') && !absoluteUrl.includes('javascript:')) {
+            // Check if this is a main navigation link (not too deep)
+            const urlPath = new URL(absoluteUrl).pathname;
+            const pathDepth = urlPath.split('/').filter(segment => segment.length > 0).length;
+            
+            // Only include main pages: index (depth 0) and direct navigation (depth 1)
+            // For sub-menus, only take the first item from each level
+            let shouldInclude = false;
+            
+            if (pathDepth <= 1) {
+              // Main pages and direct navigation
+              shouldInclude = true;
+            } else if (pathDepth === 2) {
+              // Sub-menu items - only include if it's the first of its type
+              const parentPath = urlPath.split('/').slice(0, -1).join('/');
+              const existingSubMenu = Array.from(internalLinks).some(existingUrl => {
+                const existingPath = new URL(existingUrl).pathname;
+                return existingPath.startsWith(parentPath) && existingPath !== parentPath;
+              });
+              shouldInclude = !existingSubMenu;
+            }
+            
+            if (shouldInclude) {
               internalLinks.add(absoluteUrl);
               
-              // Track navigation links specifically
-              if (isInNav || 
-                  linkClasses.includes('nav') || 
-                  linkClasses.includes('menu') || 
-                  linkClasses.includes('link') ||
-                  parentElement.is('nav') ||
-                  parentElement.hasClass('nav') ||
-                  parentElement.hasClass('menu') ||
-                  parentElement.hasClass('navigation')) {
+              if (isInNav || linkClasses.includes('nav') || linkClasses.includes('menu') || 
+                  parentElement.hasClass('nav') || parentElement.hasClass('menu') ||
+                  linkText.length > 0 && linkText.length < 50) {
                 navigationLinks.add(absoluteUrl);
                 console.log('Navigation link found:', linkText, '->', absoluteUrl);
               }
             }
-          } else if (href.startsWith('http')) {
+          } else if (href.startsWith('http') && !href.startsWith(website)) {
             externalLinks.add(absoluteUrl);
           }
         } catch (error) {
-          console.log('Invalid URL:', href);
+          console.log('Skipping invalid link:', href, 'Error:', error.message);
         }
       }
     });
     
+    console.log('Internal links found:', internalLinks.size);
     console.log('Navigation links found:', navigationLinks.size);
-    console.log('Total internal pages found:', internalLinks.size);
     console.log('External links found:', externalLinks.size);
     
-    // 3. Crawl internal pages to get comprehensive data
+    // 3. Analyze main pages only (limit to 10 to avoid too many requests)
+    const pagesToAnalyze = Array.from(internalLinks).slice(0, 10);
+    console.log('Pages to analyze:', pagesToAnalyze.length);
+    
     const pageAnalysis = [];
-    const allMetaData = new Map();
-    const allKeywords = new Map();
-    const deadLinks = [];
-    const pageContent = [];
-    
-    console.log('Found ' + internalLinks.size + ' internal pages to analyze');
-    
-    // Limit to first 15 pages for performance
-    const pagesToAnalyze = Array.from(internalLinks).slice(0, 15);
-    
     for (const pageUrl of pagesToAnalyze) {
       try {
-        console.log('Analyzing page: ' + pageUrl);
-        const pageResponse = await axios.get(pageUrl, { timeout: 10000 });
+        console.log('Analyzing page:', pageUrl);
+        const pageResponse = await axios.get(pageUrl);
         const page$ = cheerio.load(pageResponse.data);
         
-        // Extract page-specific data
         const pageData = {
           url: pageUrl,
           title: page$('title').text().trim(),
           metaDescription: page$('meta[name="description"]').attr('content') || '',
           metaKeywords: page$('meta[name="keywords"]').attr('content') || '',
+          wordCount: page$('body').text().trim().split(/\s+/).length,
+          imageCount: page$('img').length,
           h1Count: page$('h1').length,
           h2Count: page$('h2').length,
           h3Count: page$('h3').length,
-          imageCount: page$('img').length,
-          wordCount: page$('body').text().trim().split(/\s+/).length,
-          loadTime: pageResponse.headers['x-response-time'] || 'unknown'
+          content: page$('body').text().trim().substring(0, 500),
+          links: page$('a[href]').length
         };
         
         pageAnalysis.push(pageData);
+        console.log('Page analysis completed:', pageData.title);
         
-        // Store page content for display
-        const pageText = page$('body').text().trim();
-        if (pageText.length > 100) {
-          pageContent.push({
-            url: pageUrl,
-            title: pageData.title,
-            content: pageText.substring(0, 500) + '...',
-            wordCount: pageData.wordCount
-          });
-        }
-        
-        // Collect meta data
-        page$('meta').each(function(i, el) {
-          const name = page$(el).attr('name') || page$(el).attr('property');
-          const content = page$(el).attr('content');
-          if (name && content) {
-            if (!allMetaData.has(name)) {
-              allMetaData.set(name, new Set());
-            }
-            allMetaData.get(name).add(content);
-          }
-        });
-        
-        // Extract keywords from content
-        const pageTextLower = pageText.toLowerCase();
-        const words = pageTextLower.match(/\b[a-z]{3,}\b/g) || [];
-        words.forEach(function(word) {
-          if (word.length > 3) {
-            allKeywords.set(word, (allKeywords.get(word) || 0) + 1);
-          }
-        });
+        // Add delay between requests to be respectful
+        await new Promise(resolve => setTimeout(resolve, 500));
         
       } catch (error) {
-        console.log('Failed to analyze page ' + pageUrl + ':', error.message);
-        deadLinks.push(pageUrl);
+        console.log('Error analyzing page:', pageUrl, 'Error:', error.message);
       }
     }
     
@@ -845,9 +809,10 @@ app.post('/api/analyze-website', async (req, res) => {
       // Basic info
       ...mainPageAnalysis,
       
-      // Page structure
+      // Page structure - focused on main pages only
       totalPages: internalLinks.size,
       navigationPages: navigationLinks.size,
+      mainPages: pagesToAnalyze.length,
       analyzedPages: pageAnalysis.length,
       averageWordsPerPage: pageAnalysis.length > 0 ? Math.round(pageAnalysis.reduce(function(sum, page) { return sum + page.wordCount; }, 0) / pageAnalysis.length) : 0,
       
@@ -859,29 +824,26 @@ app.post('/api/analyze-website', async (req, res) => {
         h3: pageAnalysis.reduce(function(sum, page) { return sum + page.h3Count; }, 0)
       },
       
-      // Meta data summary
-      metaDataSummary: Object.fromEntries(
-        Array.from(allMetaData.entries()).map(function(entry) {
-          return [
-            entry[0], 
-            Array.from(entry[1]).slice(0, 5) // Show first 5 unique values
-          ];
-        })
-      ),
-      
-      // Top keywords (most frequent)
-      topKeywords: Array.from(allKeywords.entries())
-        .sort(function(a, b) { return b[1] - a[1]; })
-        .slice(0, 20)
-        .map(function(entry) { return { word: entry[0], count: entry[1] }; }),
+      // Page depth analysis
+      pageDepth: {
+        indexLevel: 1, // Always 1 for index
+        directNavigation: Array.from(internalLinks).filter(url => {
+          const path = new URL(url).pathname;
+          return path.split('/').filter(segment => segment.length > 0).length === 1;
+        }).length,
+        subMenuLevel: Array.from(internalLinks).filter(url => {
+          const path = new URL(url).pathname;
+          return path.split('/').filter(segment => segment.length > 0).length === 2;
+        }).length
+      },
       
       // Link health
       linkHealth: {
         internalLinks: internalLinks.size,
         navigationLinks: navigationLinks.size,
         externalLinks: externalLinks.size,
-        deadLinks: deadLinks.length,
-        deadLinkPercentage: Math.round((deadLinks.length / (internalLinks.size + externalLinks.size)) * 100)
+        mainPageLinks: pagesToAnalyze.length,
+        subPageLinks: internalLinks.size - pagesToAnalyze.length
       },
       
       // SEO insights
@@ -894,13 +856,6 @@ app.post('/api/analyze-website', async (req, res) => {
         descriptionOptimal: mainPageAnalysis.description && mainPageAnalysis.description.length >= 120 && mainPageAnalysis.description.length <= 160
       },
       
-      // Page performance indicators
-      performance: {
-        averageLoadTime: 'analyzed', // Would need actual timing data
-        imageOptimization: pageAnalysis.reduce(function(sum, page) { return sum + page.imageCount; }, 0) > 0 ? 'images present' : 'no images',
-        contentDensity: pageAnalysis.length > 0 ? 'good' : 'limited'
-      },
-      
       // Business insights
       businessInsights: {
         estimatedBusinessType: mainPageAnalysis.estimatedBusinessType,
@@ -910,17 +865,16 @@ app.post('/api/analyze-website', async (req, res) => {
         logoFound: !!mainPageAnalysis.logo
       },
       
-      // Page content for display
-      pageContent: pageContent,
-      
-      // Raw page analysis data
-      pageAnalysis: pageAnalysis,
-      
-      // Navigation analysis
-      navigation: {
-        totalLinks: navigationLinks.size,
-        links: Array.from(navigationLinks)
-      }
+      // Page content for redesign focus
+      pageContent: pageAnalysis.map(function(page) {
+        return {
+          url: page.url,
+          title: page.title,
+          wordCount: page.wordCount,
+          content: page.content,
+          isMainPage: page.url === website || new URL(page.url).pathname.split('/').filter(segment => segment.length > 0).length <= 1
+        };
+      })
     };
 
     console.log('Comprehensive analysis completed successfully');
@@ -1003,6 +957,65 @@ app.post('/api/setup-database', async (req, res) => {
   } catch (error) {
     console.error('Database setup error:', error);
     res.status(500).json({ error: 'Failed to setup database: ' + error.message });
+  }
+});
+
+// GET endpoint for easy browser access
+app.get('/api/setup-database', async (req, res) => {
+  try {
+    console.log('Setting up database tables via GET request...');
+    
+    const setupSQL = `
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+      
+      CREATE TABLE IF NOT EXISTS jobs (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        website TEXT NOT NULL,
+        email TEXT,
+        theme VARCHAR(50) NOT NULL,
+        business_type VARCHAR(50) NOT NULL,
+        status TEXT NOT NULL,
+        job_type VARCHAR(50) DEFAULT 'clone',
+        demo_urls JSONB,
+        mockup_url TEXT,
+        generated_html TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    
+    await pool.query(setupSQL);
+    console.log('Database tables created successfully');
+    
+    res.send(`
+      <html>
+        <head><title>Database Setup</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 2rem; background: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h1 style="color: #28a745;">✅ Database Setup Complete!</h1>
+            <p><strong>Message:</strong> Database initialized successfully</p>
+            <p><strong>Tables Created:</strong> jobs</p>
+            <p><strong>Next Step:</strong> You can now use the generate website functionality!</p>
+            <a href="/" style="display: inline-block; background: #667eea; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 5px; margin-top: 1rem;">← Back to Website</a>
+          </div>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Database setup error:', error);
+    res.status(500).send(`
+      <html>
+        <head><title>Database Setup Error</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 2rem; background: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h1 style="color: #dc3545;">❌ Database Setup Failed</h1>
+            <p><strong>Error:</strong> ${error.message}</p>
+            <p>Please check your database connection settings in Render.</p>
+            <a href="/" style="display: inline-block; background: #6c757d; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 5px; margin-top: 1rem;">← Back to Website</a>
+          </div>
+        </body>
+      </html>
+    `);
   }
 });
 
