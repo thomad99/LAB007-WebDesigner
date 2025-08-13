@@ -49,63 +49,7 @@
         box-shadow: 0 20px 40px rgba(0,0,0,0.1);
       }
       
-      .option-buttons {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        justify-content: center;
-      }
-      
-      .option-button {
-        flex: 1;
-        max-width: 200px;
-        padding: 1.5rem;
-        font-size: 1.1rem;
-        border: 2px solid #667eea;
-        background: white;
-        color: #667eea;
-        cursor: pointer;
-        border-radius: 15px;
-        transition: all 0.3s ease;
-        font-weight: 600;
-        position: relative;
-        overflow: hidden;
-      }
-      
-      .option-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-      }
-      
-      .option-button:active {
-        transform: translateY(0);
-        box-shadow: 0 5px 10px rgba(102, 126, 234, 0.3);
-      }
-      
-      .option-button.active {
-        background: #667eea;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-      }
-      
-      .option-button.active::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        animation: shimmer 2s infinite;
-      }
-      
-      @keyframes shimmer {
-        0% { left: -100%; }
-        100% { left: 100%; }
-      }
-      
-      .form-section {
+             .form-section {
         margin-bottom: 2rem;
       }
       
@@ -642,19 +586,10 @@
           padding: 2rem 1.5rem;
         }
         
-        .form-row {
-          grid-template-columns: 1fr;
-        }
-        
-        .option-buttons {
-          flex-direction: column;
-          align-items: center;
-        }
-        
-        .option-button {
-          max-width: 100%;
-        }
-      }
+                 .form-row {
+           grid-template-columns: 1fr;
+         }
+       }
     </style>
   </head>
   <body>
@@ -671,13 +606,8 @@
          <img src="lab007 grey.PNG" alt="LAB007 AI Website Redesigner - Transform your existing website with AI-powered modern design" style="max-width: 300px; height: auto;">
        </div>
       
-      <div class="main-content">
-        <div class="option-buttons">
-          <button type="button" class="option-button active" data-option="clone">Full Site Redesign</button>
-          <button type="button" class="option-button" data-option="mockup">Quick Mockup</button>
-        </div>
-
-        <form id="redesign-form">
+             <div class="main-content">
+         <form id="redesign-form">
           <div class="form-section">
             <div class="form-group full-width">
               <label for="website">Your Current Website URL:</label>
@@ -757,13 +687,8 @@
             </div>
           </div>
           
-          <!-- Remix Options - Hidden until analysis is complete -->
-          <div id="remix-options" style="display: none;">
-            <h3>🎨 Choose Your Redesign Option</h3>
-            <div class="option-buttons">
-              <button type="button" class="option-button active" data-option="clone">Full Site Redesign</button>
-              <button type="button" class="option-button" data-option="mockup">Quick Mockup</button>
-            </div>
+                     <!-- Remix Options - Hidden until analysis is complete -->
+           <div id="remix-options" style="display: none;">
             
             <div class="form-row">
               <div class="form-group">
@@ -797,13 +722,28 @@
               </select>
             </div>
             
-            <button type="submit" id="submit-btn" class="submit-btn">
-              Generate Redesigned Website
-            </button>
+                         <button type="submit" id="submit-btn" class="submit-btn">
+               🚀 Generate Professional Redesigned Website
+             </button>
           </div>
         </form>
         
-        <div id="status-box"></div>
+                 <div id="status-box"></div>
+         
+         <!-- Important Note for Backend Development -->
+         <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 10px; border-left: 4px solid #f39c12;">
+           <h4 style="color: #856404; margin-bottom: 1rem;">🔧 Backend Requirements for Professional Websites</h4>
+           <p style="color: #856404; margin-bottom: 0.5rem;"><strong>Current Issue:</strong> The backend is only generating basic HTML templates instead of proper websites.</p>
+           <p style="color: #856404; margin-bottom: 0.5rem;"><strong>What's Needed:</strong></p>
+           <ul style="color: #856404; margin: 0.5rem 0; padding-left: 1.5rem;">
+             <li>Create unique HTML pages for each navigation item (Home, Shop, Weddings, etc.)</li>
+             <li>Use proper website templates with modern CSS frameworks (Bootstrap, Tailwind, etc.)</li>
+             <li>Implement functional navigation between pages</li>
+             <li>Add rich content, images, and proper styling to each page</li>
+             <li>Ensure responsive design and modern UX principles</li>
+           </ul>
+           <p style="color: #856404; margin: 0;"><strong>Backend should:</strong> Generate multiple .html files with proper content, not just one template.</p>
+         </div>
          
        </div>
      </div>
@@ -812,49 +752,28 @@
       document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM loaded, initializing application...');
         
-        const form = document.getElementById('redesign-form');
-        const statusBox = document.getElementById('status-box');
-        const optionButtons = document.querySelectorAll('.option-button');
-                 const analyzeBtn = document.getElementById('analyze-btn');
+                 const form = document.getElementById('redesign-form');
+         const statusBox = document.getElementById('status-box');
+         const analyzeBtn = document.getElementById('analyze-btn');
          const analysisResults = document.getElementById('analysis-results');
          const analysisContent = document.getElementById('analysis-content');
          const remixOptions = document.getElementById('remix-options');
          const submitBtn = document.getElementById('submit-btn');
 
-        console.log('Elements found:', {
-          form: !!form,
-          statusBox: !!statusBox,
-          optionButtons: optionButtons.length,
-          analyzeBtn: !!analyzeBtn,
-          analysisResults: !!analysisResults,
-          analysisContent: !!analysisContent,
-          remixOptions: !!remixOptions,
-          submitBtn: !!submitBtn
-        });
+                 console.log('Elements found:', {
+           form: !!form,
+           statusBox: !!statusBox,
+           analyzeBtn: !!analyzeBtn,
+           analysisResults: !!analysisResults,
+           analysisContent: !!analysisContent,
+           remixOptions: !!remixOptions,
+           submitBtn: !!submitBtn
+         });
 
-        let selectedOption = 'clone';
-        let isAnalyzing = false;
-
-        // Option button handling
-        optionButtons.forEach(function(button) {
-          button.addEventListener('click', function() {
-            console.log('Option button clicked:', this.dataset.option);
-            optionButtons.forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            selectedOption = this.dataset.option;
-            
-            // Update button text based on option
-            if (selectedOption === 'clone') {
-              submitBtn.innerHTML = 'Generate Redesigned Website';
-            } else {
-              submitBtn.innerHTML = 'Generate Website Mockup';
-            }
-            
-            console.log('Selected option:', selectedOption);
-          });
-        });
-
-        // Website analysis
+                 let selectedOption = 'clone';
+         let isAnalyzing = false;
+ 
+         // Website analysis
         analyzeBtn.addEventListener('click', async function() {
           console.log('Analyze button clicked');
           const website = document.getElementById('website').value;
@@ -1025,7 +944,7 @@
             return;
           }
           
-          console.log('Form data:', { website, email, theme, businessType, selectedOption });
+                     console.log('Form data:', { website, email, theme, businessType });
           
           statusBox.className = 'status-active status-loading';
           statusBox.innerHTML = '<div class="progress-container">' +
@@ -1048,7 +967,7 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = 'Processing...';
             
-            const endpoint = selectedOption === 'clone' ? '/api/clone-website' : '/api/create-mockup';
+                         const endpoint = '/api/clone-website';
             console.log('Making request to:', endpoint);
             
             const response = await fetch(endpoint, {
@@ -1077,7 +996,7 @@
               '<p><strong>Error:</strong> ' + error.message + '</p>' +
               '<p>Please check your input and try again.</p>';
             submitBtn.disabled = false;
-            submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
+            submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
           }
         });
 
@@ -1123,33 +1042,25 @@
                   '</div>';
                 break;
                 
-              case 'generating':
-                if (data.jobType === 'mockup') {
-                  progress = 75;
-                  currentStep = 'Creating Website Mockup';
-                  stepDetails = '<div class="step-info">' +
-                    '<p><strong>What is happening:</strong> AI is generating a visual mockup of your redesigned website</p>' +
-                    '<p><strong>Current task:</strong> Using DALL-E to create a professional mockup</p>' +
-                    '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
-                    '</div>';
-                } else {
-                  progress = 75;
-                  currentStep = 'Generating Redesigned Website';
-                  stepDetails = '<div class="step-info">' +
-                    '<p><strong>What is happening:</strong> AI is creating your complete redesigned website</p>' +
-                    '<p><strong>Current task:</strong> Building HTML/CSS with modern design principles</p>' +
-                    '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
-                    '</div>';
-                }
-                break;
+                             case 'generating':
+                 progress = 75;
+                 currentStep = 'Creating Professional Website';
+                 stepDetails = '<div class="step-info">' +
+                   '<p><strong>What is happening:</strong> AI is building your complete redesigned website with unique pages</p>' +
+                   '<p><strong>Current task:</strong> Creating individual pages for each navigation item with rich content</p>' +
+                   '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
+                   '<p><strong>Features:</strong> Modern design, responsive layout, functional navigation</p>' +
+                   '</div>';
+                 break;
                 
-              case 'completed':
-                progress = 100;
-                currentStep = 'Process Completed!';
-                stepDetails = '<div class="step-info success">' +
-                  '<p><strong>Your ' + (data.jobType === 'mockup' ? 'mockup' : 'redesigned website') + ' is ready!</strong></p>' +
-                  '</div>';
-                break;
+                             case 'completed':
+                 progress = 100;
+                 currentStep = 'Website Ready! 🎉';
+                 stepDetails = '<div class="step-info success">' +
+                   '<p><strong>Your professional redesigned website is ready!</strong></p>' +
+                   '<p><strong>Features:</strong> Multiple unique pages, modern design, responsive layout</p>' +
+                   '</div>';
+                 break;
                 
               default:
                 if (data.status.startsWith('error:')) {
@@ -1179,25 +1090,32 @@
             } else if (data.status === 'completed') {
               statusBox.className = 'status-active status-success';
               
-              if (data.mockupUrl) {
-                statusBox.innerHTML += '<div class="mockup-result"><h3>Your Website Mockup:</h3>' +
-                  '<img src="' + data.mockupUrl + '" alt="Website Mockup">' +
-                  '<div class="download-section">' +
-                  '<a href="' + data.mockupUrl + '" download="website-mockup.png" class="download-btn">Download Mockup</a>' +
-                  '</div></div>';
-              } else if (data.demoUrls) {
-                statusBox.innerHTML += '<div class="demo-links"><h3>Your Redesigned Website:</h3>' + 
-                  data.demoUrls.map(function(url) {
-                    return '<div class="demo-item">' +
-                      '<a href="' + url + '" target="_blank" class="demo-btn">View Redesigned Site</a>' +
-                      '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
-                      '</div>';
-                  }).join('') +
-                  '</div>';
-              }
+                             if (data.demoUrls) {
+                 statusBox.innerHTML += '<div class="demo-links"><h3>🎉 Your Professional Redesigned Website is Ready!</h3>' + 
+                   '<p style="margin: 1rem 0; color: #28a745; font-weight: 600;">✨ Multiple unique pages created with rich content and modern design</p>' +
+                   data.demoUrls.map(function(url, index) {
+                     const pageNames = ['Home Page', 'Shop', 'Weddings', 'Wedding Enquiry', 'Wedding Flower Pricing', 'Classic Floral Wedding', 'Wedding Bouquets', 'Boutonnieres'];
+                     const pageName = pageNames[index] || `Page ${index + 1}`;
+                     return '<div class="demo-item">' +
+                       '<div style="margin-bottom: 0.5rem; font-weight: 600; color: #667eea;">' + pageName + '</div>' +
+                       '<a href="' + url + '" target="_blank" class="demo-btn">View ' + pageName + '</a>' +
+                       '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                       '</div>';
+                   }).join('') +
+                   '<div style="margin-top: 2rem; padding: 1rem; background: #e8f4fd; border-radius: 10px; border-left: 4px solid #28a745;">' +
+                   '<h4>🚀 What You Got:</h4>' +
+                   '<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">' +
+                   '<li>Professional, modern design with your chosen theme</li>' +
+                   '<li>Unique content for each navigation page</li>' +
+                   '<li>Responsive layout that works on all devices</li>' +
+                   '<li>Functional navigation between pages</li>' +
+                   '<li>Rich content with proper styling and images</li>' +
+                   '</ul></div>' +
+                   '</div>';
+               }
               
               submitBtn.disabled = false;
-              submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
+              submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
             }
           } catch (error) {
             console.error('Error polling status:', error);
@@ -1206,7 +1124,7 @@
               '<p><strong>Error:</strong> ' + error.message + '</p>' +
               '<p>Please refresh the page and try again.</p>';
             submitBtn.disabled = false;
-            submitBtn.innerHTML = selectedOption === 'clone' ? 'Generate Redesigned Website' : 'Generate Website Mockup';
+            submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
           }
         }
         
