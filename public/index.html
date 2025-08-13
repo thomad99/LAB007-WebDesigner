@@ -683,7 +683,6 @@
               <label for="website">Your Current Website URL:</label>
               <input type="url" id="website" name="website" required placeholder="https://example.com">
                              <button type="button" id="analyze-btn" class="analyze-btn">Analyze Website</button>
-               <button type="button" id="test-wave-btn" style="background: #ff6b6b; margin-left: 10px;">Test Wave</button>
             </div>
             
             <div id="analysis-results" class="analysis-results">
@@ -817,7 +816,6 @@
         const statusBox = document.getElementById('status-box');
         const optionButtons = document.querySelectorAll('.option-button');
                  const analyzeBtn = document.getElementById('analyze-btn');
-         const testWaveBtn = document.getElementById('test-wave-btn');
          const analysisResults = document.getElementById('analysis-results');
          const analysisContent = document.getElementById('analysis-content');
          const remixOptions = document.getElementById('remix-options');
@@ -941,11 +939,14 @@
              
              analysisContent.innerHTML = analysisHTML;
             
-            // Show comprehensive analysis if available
-            if (data.totalPages !== undefined) {
-              document.getElementById('comprehensive-analysis').style.display = 'block';
-              populateComprehensiveAnalysis(data);
-            }
+                         // Show comprehensive analysis if available
+             if (data.totalPages !== undefined) {
+               document.getElementById('comprehensive-analysis').style.display = 'block';
+               populateComprehensiveAnalysis(data);
+             } else {
+               // Hide comprehensive analysis if data is incomplete
+               document.getElementById('comprehensive-analysis').style.display = 'none';
+             }
             
             analysisResults.style.display = 'block';
             
@@ -959,12 +960,31 @@
             
             console.log('Analysis completed successfully');
             
-          } catch (error) {
-            console.error('Analysis error:', error);
-            alert('Error analyzing website: ' + error.message);
-            // Hide remix options if analysis fails
-            remixOptions.style.display = 'none';
-                     } finally {
+                     } catch (error) {
+             console.error('Analysis error:', error);
+             alert('Error analyzing website: ' + error.message);
+             
+             // Show remix options even on failure with fallback data
+             remixOptions.style.display = 'block';
+             
+             // Show basic analysis results with fallback data
+             analysisContent.innerHTML = '<div class="analysis-item">' +
+               '<strong>Title:</strong> Analysis completed with limited data</div>' +
+               '<div class="analysis-item">' +
+               '<strong>Description:</strong> Basic analysis completed</div>' +
+               '<div class="analysis-item">' +
+               '<strong>Estimated Business Type:</strong> General Business</div>' +
+               '<div class="analysis-item">' +
+               '<strong>Suggested Themes:</strong>' +
+               '<div class="suggestions">' +
+               '<span class="suggestion-tag" onclick="selectTheme(\'clean-white\')">Clean White</span>' +
+               '<span class="suggestion-tag" onclick="selectTheme(\'dark-black\')">Dark Black</span>' +
+               '<span class="suggestion-tag" onclick="selectTheme(\'colorful\')">Colorful</span>' +
+               '</div></div>';
+             
+             analysisResults.style.display = 'block';
+             
+           } finally {
              isAnalyzing = false;
              analyzeBtn.disabled = false;
              analyzeBtn.innerHTML = 'Analyze Website';
@@ -1221,25 +1241,7 @@
           });
         }
         
-                 // Test wave animation button
-         testWaveBtn.addEventListener('click', function() {
-           console.log('Test wave button clicked');
-           const waveContainer = document.getElementById('wave-container');
-           if (waveContainer) {
-             waveContainer.classList.add('active');
-             console.log('Test wave activated');
-             
-             // Auto-deactivate after 5 seconds
-             setTimeout(function() {
-               waveContainer.classList.remove('active');
-               console.log('Test wave auto-deactivated');
-             }, 5000);
-           } else {
-             console.error('Wave container not found for test!');
-           }
-         });
-         
-         console.log('Application initialized successfully');
+                 console.log('Application initialized successfully');
          
        });
 
@@ -1252,163 +1254,186 @@
       }
           
       function populateComprehensiveAnalysis(data) {
-            // Page Structure & Content
-            const pageStructureContent = document.getElementById('page-structure-content');
-            pageStructureContent.innerHTML = 
-              '<div class="metric-grid">' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.totalPages + '</div>' +
-                  '<div class="metric-label">Total Pages Found</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.navigationPages + '</div>' +
-                  '<div class="metric-label">Navigation Pages</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.analyzedPages + '</div>' +
-                  '<div class="metric-label">Pages Analyzed</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.averageWordsPerPage + '</div>' +
-                  '<div class="metric-label">Avg Words/Page</div>' +
-                '</div>' +
-              '</div>' +
-              '<h5>Content Overview:</h5>' +
-              '<div class="metric-grid">' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.totalImages + '</div>' +
-                  '<div class="metric-label">Total Images</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.totalHeadings.h1 + '</div>' +
-                  '<div class="metric-label">H1 Headings</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.totalHeadings.h2 + '</div>' +
-                  '<div class="metric-label">H2 Headings</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.totalHeadings.h3 + '</div>' +
-                  '<div class="metric-label">H3 Headings</div>' +
-                '</div>' +
-              '</div>' +
-              (data.navigation && data.navigation.totalLinks > 0 ? 
-                '<h5>Navigation Structure:</h5>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.navigation.totalLinks + ' Menu Items</div>' +
-                  '<div class="metric-label">Main Navigation Links</div>' +
-                '</div>' : '');
+                         // Page Structure & Content
+             const pageStructureContent = document.getElementById('page-structure-content');
+             pageStructureContent.innerHTML = 
+               '<div class="metric-grid">' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.totalPages || 0) + '</div>' +
+                   '<div class="metric-label">Total Pages Found</div>' +
+                 '</div>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.navigationPages || 0) + '</div>' +
+                   '<div class="metric-label">Navigation Pages</div>' +
+                 '</div>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.analyzedPages || 0) + '</div>' +
+                   '<div class="metric-label">Pages Analyzed</div>' +
+                 '</div>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.averageWordsPerPage || 0) + '</div>' +
+                   '<div class="metric-label">Avg Words/Page</div>' +
+                 '</div>' +
+               '</div>' +
+               '<h5>Content Overview:</h5>' +
+               '<div class="metric-grid">' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.totalImages || 0) + '</div>' +
+                   '<div class="metric-label">Total Images</div>' +
+                 '</div>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.totalHeadings && data.totalHeadings.h1 ? data.totalHeadings.h1 : 0) + '</div>' +
+                   '<div class="metric-label">H1 Headings</div>' +
+                 '</div>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.totalHeadings && data.totalHeadings.h2 ? data.totalHeadings.h2 : 0) + '</div>' +
+                   '<div class="metric-label">H2 Headings</div>' +
+                 '</div>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.totalHeadings && data.totalHeadings.h3 ? data.totalHeadings.h3 : 0) + '</div>' +
+                   '<div class="metric-label">H3 Headings</div>' +
+                 '</div>' +
+               '</div>' +
+               (data.navigation && data.navigation.totalLinks > 0 ? 
+                 '<h5>Navigation Structure:</h5>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + data.navigation.totalLinks + ' Menu Items</div>' +
+                   '<div class="metric-label">Main Navigation Links</div>' +
+                 '</div>' : '');
             
-            // SEO Insights
-            const seoContent = document.getElementById('seo-insights-content');
-            seoContent.innerHTML = 
-              '<div class="metric-grid">' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + (data.seoInsights.titleOptimal ? '✅' : '❌') + '</div>' +
-                  '<div class="metric-label">Title Length (' + data.seoInsights.titleLength + ' chars)</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + (data.seoInsights.descriptionOptimal ? '✅' : '❌') + '</div>' +
-                  '<div class="metric-label">Description Length (' + data.seoInsights.descriptionLength + ' chars)</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + (data.seoInsights.hasTitle ? '✅' : '❌') + '</div>' +
-                  '<div class="metric-label">Has Title Tag</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + (data.seoInsights.hasDescription ? '✅' : '❌') + '</div>' +
-                  '<div class="metric-label">Has Meta Description</div>' +
-                '</div>' +
-              '</div>';
+                         // SEO Insights
+             const seoContent = document.getElementById('seo-insights-content');
+             if (data.seoInsights && typeof data.seoInsights === 'object') {
+               seoContent.innerHTML = 
+                 '<div class="metric-grid">' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.seoInsights.titleOptimal ? '✅' : '❌') + '</div>' +
+                     '<div class="metric-label">Title Length (' + (data.seoInsights.titleLength || 0) + ' chars)</div>' +
+                   '</div>' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.seoInsights.descriptionOptimal ? '✅' : '❌') + '</div>' +
+                     '<div class="metric-label">Description Length (' + (data.seoInsights.descriptionLength || 0) + ' chars)</div>' +
+                   '</div>' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.seoInsights.hasTitle ? '✅' : '❌') + '</div>' +
+                     '<div class="metric-label">Has Title Tag</div>' +
+                   '</div>' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.seoInsights.hasDescription ? '✅' : '❌') + '</div>' +
+                     '<div class="metric-label">Has Meta Description</div>' +
+                   '</div>' +
+                 '</div>';
+             } else {
+               seoContent.innerHTML = '<p>No SEO insights data available</p>';
+             }
             
-            // Link Health
-            const linkHealthContent = document.getElementById('link-health-content');
-            linkHealthContent.innerHTML = 
-              '<div class="metric-grid">' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.linkHealth.internalLinks + '</div>' +
-                  '<div class="metric-label">Internal Pages</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.linkHealth.navigationLinks + '</div>' +
-                  '<div class="metric-label">Navigation Links</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.linkHealth.externalLinks + '</div>' +
-                  '<div class="metric-label">External Links</div>' +
-                '</div>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.linkHealth.deadLinks + '</div>' +
-                  '<div class="metric-label">Dead Links</div>' +
-                '</div>' +
-              '</div>' +
-              (data.linkHealth.deadLinks > 0 ? 
-                '<div class="metric-card" style="margin-top: 1rem; border-left-color: #dc3545;">' +
-                  '<div class="metric-value" style="color: #dc3545;">' + data.linkHealth.deadLinkPercentage + '%</div>' +
-                  '<div class="metric-label">Dead Link Percentage</div>' +
-                '</div>' : '');
+                         // Link Health
+             const linkHealthContent = document.getElementById('link-health-content');
+             if (data.linkHealth && typeof data.linkHealth === 'object') {
+               linkHealthContent.innerHTML = 
+                 '<div class="metric-grid">' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.linkHealth.internalLinks || 0) + '</div>' +
+                     '<div class="metric-label">Internal Pages</div>' +
+                   '</div>' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.linkHealth.navigationLinks || 0) + '</div>' +
+                     '<div class="metric-label">Navigation Links</div>' +
+                   '</div>' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.linkHealth.externalLinks || 0) + '</div>' +
+                     '<div class="metric-label">External Links</div>' +
+                   '</div>' +
+                   '<div class="metric-card">' +
+                     '<div class="metric-value">' + (data.linkHealth.deadLinks || 0) + '</div>' +
+                     '<div class="metric-label">Dead Links</div>' +
+                   '</div>' +
+                 '</div>' +
+                 (data.linkHealth.deadLinks > 0 ? 
+                   '<div class="metric-card" style="margin-top: 1rem; border-left-color: #dc3545;">' +
+                     '<div class="metric-value" style="color: #dc3545;">' + (data.linkHealth.deadLinkPercentage || 0) + '%</div>' +
+                     '<div class="metric-label">Dead Link Percentage</div>' +
+                   '</div>' : '');
+             } else {
+               linkHealthContent.innerHTML = '<p>No link health data available</p>';
+             }
             
-            // Keywords
-            const keywordsContent = document.getElementById('keywords-content');
-            keywordsContent.innerHTML = 
-              '<h5>Top 20 Keywords:</h5>' +
-              '<div style="margin: 1rem 0;">' +
-                data.topKeywords.map(function(keyword) {
-                  return '<span class="keyword-tag">' + keyword.word + ' (' + keyword.count + ')</span>';
-                }).join('') +
-              '</div>';
+                         // Keywords
+             const keywordsContent = document.getElementById('keywords-content');
+             if (data.topKeywords && Array.isArray(data.topKeywords) && data.topKeywords.length > 0) {
+               keywordsContent.innerHTML = 
+                 '<h5>Top 20 Keywords:</h5>' +
+                 '<div style="margin: 1rem 0;">' +
+                   data.topKeywords.map(function(keyword) {
+                     return '<span class="keyword-tag">' + keyword.word + ' (' + keyword.count + ')</span>';
+                   }).join('') +
+                 '</div>';
+             } else {
+               keywordsContent.innerHTML = '<h5>Top Keywords:</h5><p>No keyword data available</p>';
+             }
             
-            // Page Content
-            const pageContentDiv = document.getElementById('page-content-content');
-            pageContentDiv.innerHTML = 
-              '<h5>Analyzed Pages:</h5>' +
-              data.pageContent.map(function(page) {
-                return '<div class="page-item">' +
-                  '<div class="page-title">' + page.title + '</div>' +
-                  '<div class="page-url">' + page.url + '</div>' +
-                  '<div class="page-stats">' +
-                    '<span>Words: ' + page.wordCount + '</span>' +
-                    '<span>Content: ' + page.content.substring(0, 100) + '...</span>' +
-                  '</div>' +
-                '</div>';
-              }).join('');
+                         // Page Content
+             const pageContentDiv = document.getElementById('page-content-content');
+             if (data.pageContent && Array.isArray(data.pageContent) && data.pageContent.length > 0) {
+               pageContentDiv.innerHTML = 
+                 '<h5>Analyzed Pages:</h5>' +
+                 data.pageContent.map(function(page) {
+                   return '<div class="page-item">' +
+                     '<div class="page-title">' + (page.title || 'Untitled') + '</div>' +
+                     '<div class="page-url">' + (page.url || 'No URL') + '</div>' +
+                     '<div class="page-stats">' +
+                       '<span>Words: ' + (page.wordCount || 0) + '</span>' +
+                       '<span>Content: ' + (page.content ? page.content.substring(0, 100) + '...' : 'No content') + '</span>' +
+                     '</div>' +
+                   '</div>';
+                 }).join('');
+             } else {
+               pageContentDiv.innerHTML = '<h5>Analyzed Pages:</h5><p>No page content data available</p>';
+             }
             
-            // Meta Data
-            const metaDataContent = document.getElementById('meta-data-content');
-            metaDataContent.innerHTML = 
-              '<h5>Meta Tags Found:</h5>' +
-              Object.entries(data.metaDataSummary).map(function([name, values]) {
-                return '<div class="analysis-item">' +
-                  '<strong>' + name + ':</strong> ' +
-                  values.join(', ') +
-                '</div>';
-              }).join('');
+                         // Meta Data
+             const metaDataContent = document.getElementById('meta-data-content');
+             if (data.metaDataSummary && typeof data.metaDataSummary === 'object' && Object.keys(data.metaDataSummary).length > 0) {
+               metaDataContent.innerHTML = 
+                 '<h5>Meta Tags Found:</h5>' +
+                 Object.entries(data.metaDataSummary).map(function([name, values]) {
+                   return '<div class="analysis-item">' +
+                     '<strong>' + name + ':</strong> ' +
+                     (Array.isArray(values) ? values.join(', ') : values) +
+                   '</div>';
+                 }).join('');
+             } else {
+               metaDataContent.innerHTML = '<h5>Meta Tags Found:</h5><p>No meta data available</p>';
+             }
 
-            // Navigation Analysis
-            const navigationAnalysisContent = document.getElementById('navigation-analysis-content');
-            if (data.navigation && data.navigation.links && data.navigation.links.length > 0) {
-              navigationAnalysisContent.innerHTML = 
-                '<h5>Navigation Links Found:</h5>' +
-                '<div class="metric-card">' +
-                  '<div class="metric-value">' + data.navigation.totalLinks + '</div>' +
-                  '<div class="metric-label">Total Navigation Items</div>' +
-                '</div>' +
-                '<h6>Navigation Structure:</h6>' +
-                data.navigation.links.map(function(linkUrl) {
-                  const linkText = linkUrl.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Home';
-                  return '<div class="page-item">' +
-                    '<div class="page-title">' + linkText + '</div>' +
-                    '<div class="page-url">' + linkUrl + '</div>' +
-                  '</div>';
-                }).join('');
-            } else {
-              navigationAnalysisContent.innerHTML = 
-                '<div class="metric-card">' +
-                  '<div class="metric-value">0</div>' +
-                  '<div class="metric-label">Navigation Links Found</div>' +
-                '</div>' +
-                '<p>No clear navigation structure detected. This might be a single-page website or navigation is implemented differently.</p>';
-            }
+                         // Navigation Analysis
+             const navigationAnalysisContent = document.getElementById('navigation-analysis-content');
+             if (data.navigation && data.navigation.links && Array.isArray(data.navigation.links) && data.navigation.links.length > 0) {
+               navigationAnalysisContent.innerHTML = 
+                 '<h5>Navigation Links Found:</h5>' +
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">' + (data.navigation.totalLinks || data.navigation.links.length) + '</div>' +
+                   '<div class="metric-label">Total Navigation Items</div>' +
+                 '</div>' +
+                 '<h6>Navigation Structure:</h6>' +
+                 data.navigation.links.map(function(linkUrl) {
+                   if (typeof linkUrl === 'string') {
+                     const linkText = linkUrl.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Home';
+                     return '<div class="page-item">' +
+                       '<div class="page-title">' + linkText + '</div>' +
+                       '<div class="page-url">' + linkUrl + '</div>' +
+                     '</div>';
+                   }
+                   return '';
+                 }).filter(item => item !== '').join('');
+             } else {
+               navigationAnalysisContent.innerHTML = 
+                 '<div class="metric-card">' +
+                   '<div class="metric-value">0</div>' +
+                   '<div class="metric-label">Navigation Links Found</div>' +
+                 '</div>' +
+                 '<p>No clear navigation structure detected. This might be a single-page website or navigation is implemented differently.</p>';
+             }
           }
           
           function toggleSection(sectionId) {
