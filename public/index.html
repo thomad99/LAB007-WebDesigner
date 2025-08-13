@@ -278,9 +278,22 @@
         color: #155724;
       }
       
-      .progress-container {
-        text-align: center;
-      }
+             .progress-container {
+         text-align: center;
+       }
+       
+       .spinner-container {
+         display: flex;
+         justify-content: center;
+         margin: 1rem 0;
+       }
+       
+       .progress-spinner {
+         width: 60px;
+         height: 60px;
+         border-radius: 50%;
+         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+       }
       
       .progress-bar {
         width: 100%;
@@ -726,27 +739,12 @@
             </div>
             
                          <button type="submit" id="submit-btn" class="submit-btn">
-               🚀 Generate Professional Redesigned Website
+               Generate Professional Redesigned Website
              </button>
           </div>
         </form>
         
                  <div id="status-box"></div>
-         
-         <!-- Important Note for Backend Development -->
-         <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 10px; border-left: 4px solid #f39c12;">
-           <h4 style="color: #856404; margin-bottom: 1rem;">🔧 Backend Requirements for Professional Websites</h4>
-           <p style="color: #856404; margin-bottom: 0.5rem;"><strong>Current Issue:</strong> The backend is only generating basic HTML templates instead of proper websites.</p>
-           <p style="color: #856404; margin-bottom: 0.5rem;"><strong>What's Needed:</strong></p>
-           <ul style="color: #856404; margin: 0.5rem 0; padding-left: 1.5rem;">
-             <li>Create unique HTML pages for each navigation item (Home, Shop, Weddings, etc.)</li>
-             <li>Use proper website templates with modern CSS frameworks (Bootstrap, Tailwind, etc.)</li>
-             <li>Implement functional navigation between pages</li>
-             <li>Add rich content, images, and proper styling to each page</li>
-             <li>Ensure responsive design and modern UX principles</li>
-           </ul>
-           <p style="color: #856404; margin: 0;"><strong>Backend should:</strong> Generate multiple .html files with proper content, not just one template.</p>
-         </div>
          
        </div>
      </div>
@@ -950,14 +948,19 @@
                      console.log('Form data:', { website, email, theme, businessType });
           
           statusBox.className = 'status-active status-loading';
-          statusBox.innerHTML = '<div class="progress-container">' +
-            '<h3>Starting the redesign process...</h3>' +
-            '<div class="progress-bar">' +
-            '<div class="progress-fill" id="progress-fill"></div>' +
-            '</div>' +
-            '<p id="current-step">Initializing...</p>' +
-            '<div class="step-details" id="step-details"></div>' +
-            '</div>';
+                     statusBox.innerHTML = '<div class="progress-container">' +
+             '<h3>Starting the redesign process...</h3>' +
+             '<div class="progress-bar">' +
+             '<div class="progress-fill" id="progress-fill"></div>' +
+             '</div>' +
+             '<div class="spinner-container">' +
+             '<video autoplay muted loop playsinline class="progress-spinner">' +
+             '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
+             '</video>' +
+             '</div>' +
+             '<p id="current-step">Initializing...</p>' +
+             '<div class="step-details" id="step-details"></div>' +
+             '</div>';
 
           const formData = {
             website: normalizeUrl(website),
@@ -966,12 +969,19 @@
             businessType: businessType
           };
 
-          try {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Processing...';
-            
-                         const endpoint = '/api/clone-website';
-            console.log('Making request to:', endpoint);
+                     try {
+                           submitBtn.disabled = true;
+              submitBtn.innerHTML = '<video autoplay muted loop playsinline style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"><source src="LAB007 Spinner.mp4" type="video/mp4"></video>Processing...';
+             
+             // Activate wave animation for redesign process
+             const waveContainer = document.getElementById('wave-container');
+             if (waveContainer) {
+               waveContainer.classList.add('active');
+               console.log('Wave animation activated for redesign');
+             }
+             
+             const endpoint = '/api/clone-website';
+             console.log('Making request to:', endpoint);
             
             const response = await fetch(endpoint, {
               method: 'POST',
@@ -992,15 +1002,22 @@
             updateProgress(10, 'Job started successfully');
             
             pollStatus(data.jobId);
-          } catch (error) {
-            console.error('Error in form submission:', error);
-            statusBox.className = 'status-active status-error';
-            statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
-              '<p><strong>Error:</strong> ' + error.message + '</p>' +
-              '<p>Please check your input and try again.</p>';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
-          }
+                       } catch (error) {
+               console.error('Error in form submission:', error);
+               statusBox.className = 'status-active status-error';
+               statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
+                 '<p><strong>Error:</strong> ' + error.message + '</p>' +
+                 '<p>Please check your input and try again.</p>';
+               submitBtn.disabled = false;
+               submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
+               
+               // Deactivate wave animation on error
+               const waveContainer = document.getElementById('wave-container');
+               if (waveContainer) {
+                 waveContainer.classList.remove('active');
+                 console.log('Wave animation deactivated due to error');
+               }
+             }
         });
 
         async function pollStatus(jobId) {
@@ -1093,43 +1110,44 @@
             } else if (data.status === 'completed') {
               statusBox.className = 'status-active status-success';
               
-                             if (data.demoUrls) {
-                 statusBox.innerHTML += '<div class="demo-links"><h3>🎉 Your Professional Redesigned Website is Ready!</h3>' + 
-                   '<p style="margin: 1rem 0; color: #28a745; font-weight: 600;">✨ Multiple unique pages created with rich content and modern design</p>' +
-                   data.demoUrls.map(function(url, index) {
-                     const pageNames = ['Home Page', 'Shop', 'Weddings', 'Wedding Enquiry', 'Wedding Flower Pricing', 'Classic Floral Wedding', 'Wedding Bouquets', 'Boutonnieres'];
-                     const pageName = pageNames[index] || `Page ${index + 1}`;
-                     return '<div class="demo-item">' +
-                       '<div style="margin-bottom: 0.5rem; font-weight: 600; color: #667eea;">' + pageName + '</div>' +
-                       '<a href="' + url + '" target="_blank" class="demo-btn">View ' + pageName + '</a>' +
-                       '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
-                       '</div>';
-                   }).join('') +
-                   '<div style="margin-top: 2rem; padding: 1rem; background: #e8f4fd; border-radius: 10px; border-left: 4px solid #28a745;">' +
-                   '<h4>🚀 What You Got:</h4>' +
-                   '<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">' +
-                   '<li>Professional, modern design with your chosen theme</li>' +
-                   '<li>Unique content for each navigation page</li>' +
-                   '<li>Responsive layout that works on all devices</li>' +
-                   '<li>Functional navigation between pages</li>' +
-                   '<li>Rich content with proper styling and images</li>' +
-                   '</ul></div>' +
-                   '</div>';
-               }
+                                                           if (data.demoUrls) {
+                  statusBox.innerHTML += '<div class="demo-links">' +
+                    data.demoUrls.map(function(url, index) {
+                      return '<div class="demo-item">' +
+                        '<a href="' + url + '" target="_blank" class="demo-btn">View Home Page</a>' +
+                        '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                        '</div>';
+                    }).join('') +
+                    '</div>';
+                }
               
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
-            }
-          } catch (error) {
+                             submitBtn.disabled = false;
+               submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
+               
+               // Deactivate wave animation on completion
+               const waveContainer = document.getElementById('wave-container');
+               if (waveContainer) {
+                 waveContainer.classList.remove('active');
+                 console.log('Wave animation deactivated on completion');
+               }
+             }
+           } catch (error) {
             console.error('Error polling status:', error);
             statusBox.className = 'status-active status-error';
             statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
               '<p><strong>Error:</strong> ' + error.message + '</p>' +
               '<p>Please refresh the page and try again.</p>';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
-          }
-        }
+                         submitBtn.disabled = false;
+             submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
+             
+             // Deactivate wave animation on error
+             const waveContainer = document.getElementById('wave-container');
+             if (waveContainer) {
+               waveContainer.classList.remove('active');
+               console.log('Wave animation deactivated due to polling error');
+             }
+           }
+         }
         
         function updateProgress(percentage, step) {
           const progressFill = document.getElementById('progress-fill');
