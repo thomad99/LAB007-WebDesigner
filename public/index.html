@@ -254,20 +254,21 @@
         opacity: 1;
       }
       
-      .wave {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 200%;
-        height: 100%;
-        background: linear-gradient(45deg, 
-          rgba(102, 126, 234, 0.1) 0%, 
-          rgba(118, 75, 162, 0.1) 25%, 
-          rgba(102, 126, 234, 0.1) 50%, 
-          rgba(118, 75, 162, 0.1) 75%, 
-          rgba(102, 126, 234, 0.1) 100%);
-        animation: wave-move 8s linear infinite;
-      }
+             .wave {
+         position: absolute;
+         bottom: 0;
+         left: 0;
+         width: 200%;
+         height: 100%;
+         background: linear-gradient(45deg, 
+           rgba(102, 126, 234, 0.15) 0%, 
+           rgba(118, 75, 162, 0.15) 25%, 
+           rgba(102, 126, 234, 0.15) 50%, 
+           rgba(118, 75, 162, 0.15) 75%, 
+           rgba(102, 126, 234, 0.15) 100%);
+         animation: wave-move 8s linear infinite;
+         border-radius: 50% 50% 0 0;
+       }
       
       .wave:nth-child(2) {
         animation-delay: -2s;
@@ -681,7 +682,8 @@
             <div class="form-group full-width">
               <label for="website">Your Current Website URL:</label>
               <input type="url" id="website" name="website" required placeholder="https://example.com">
-              <button type="button" id="analyze-btn" class="analyze-btn">Analyze Website</button>
+                             <button type="button" id="analyze-btn" class="analyze-btn">Analyze Website</button>
+               <button type="button" id="test-wave-btn" style="background: #ff6b6b; margin-left: 10px;">Test Wave</button>
             </div>
             
             <div id="analysis-results" class="analysis-results">
@@ -814,11 +816,12 @@
         const form = document.getElementById('redesign-form');
         const statusBox = document.getElementById('status-box');
         const optionButtons = document.querySelectorAll('.option-button');
-        const analyzeBtn = document.getElementById('analyze-btn');
-        const analysisResults = document.getElementById('analysis-results');
-        const analysisContent = document.getElementById('analysis-content');
-        const remixOptions = document.getElementById('remix-options');
-        const submitBtn = document.getElementById('submit-btn');
+                 const analyzeBtn = document.getElementById('analyze-btn');
+         const testWaveBtn = document.getElementById('test-wave-btn');
+         const analysisResults = document.getElementById('analysis-results');
+         const analysisContent = document.getElementById('analysis-content');
+         const remixOptions = document.getElementById('remix-options');
+         const submitBtn = document.getElementById('submit-btn');
 
         console.log('Elements found:', {
           form: !!form,
@@ -869,11 +872,15 @@
            analyzeBtn.innerHTML = 'Analyzing...';
            analyzeBtn.classList.add('analyzing');
            
-           // Activate wave animation
-           const waveContainer = document.getElementById('wave-container');
-           if (waveContainer) {
-             waveContainer.classList.add('active');
-           }
+                       // Activate wave animation
+            const waveContainer = document.getElementById('wave-container');
+            console.log('Wave container found:', !!waveContainer);
+            if (waveContainer) {
+              waveContainer.classList.add('active');
+              console.log('Wave animation activated');
+            } else {
+              console.error('Wave container not found!');
+            }
           
           try {
             console.log('Making analysis request for:', website);
@@ -892,24 +899,47 @@
               throw new Error(data.error);
             }
             
-                         // Display analysis results
-             analysisContent.innerHTML = '<div class="analysis-item">' +
-               '<strong>Title:</strong> ' + (data.title || 'Not found') + '</div>' +
-               '<div class="analysis-item">' +
-               '<strong>Description:</strong> ' + (data.description || 'Not found') + '</div>' +
-               '<div class="analysis-item">' +
-               '<strong>Estimated Business Type:</strong> ' + (data.estimatedBusinessType || 'Not detected') + '</div>' +
-               '<div class="analysis-item">' +
+                         // Display analysis results with comprehensive error handling
+             let analysisHTML = '';
+             
+             // Title
+             analysisHTML += '<div class="analysis-item">' +
+               '<strong>Title:</strong> ' + (data.title || 'Not found') + '</div>';
+             
+             // Description
+             analysisHTML += '<div class="analysis-item">' +
+               '<strong>Description:</strong> ' + (data.description || 'Not found') + '</div>';
+             
+             // Business Type
+             analysisHTML += '<div class="analysis-item">' +
+               '<strong>Estimated Business Type:</strong> ' + (data.estimatedBusinessType || 'Not detected') + '</div>';
+             
+             // Suggested Themes with safe handling
+             analysisHTML += '<div class="analysis-item">' +
                '<strong>Suggested Themes:</strong>' +
-               '<div class="suggestions">' +
-               (data.suggestedThemes && Array.isArray(data.suggestedThemes) ? 
-                 data.suggestedThemes.map(function(theme) {
-                   return '<span class="suggestion-tag" onclick="selectTheme(\'' + theme + '\')">' + theme + '</span>';
-                 }).join('') : 
-                 '<span class="suggestion-tag">Modern</span><span class="suggestion-tag">Professional</span><span class="suggestion-tag">Clean</span>'
-               ) +
-               '</div></div>' +
-               (data.logo ? '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>' : '');
+               '<div class="suggestions">';
+             
+             if (data.suggestedThemes && Array.isArray(data.suggestedThemes) && data.suggestedThemes.length > 0) {
+               data.suggestedThemes.forEach(function(theme) {
+                 if (theme && typeof theme === 'string') {
+                   analysisHTML += '<span class="suggestion-tag" onclick="selectTheme(\'' + theme + '\')">' + theme + '</span>';
+                 }
+               });
+             } else {
+               // Fallback themes
+               analysisHTML += '<span class="suggestion-tag" onclick="selectTheme(\'clean-white\')">Clean White</span>' +
+                             '<span class="suggestion-tag" onclick="selectTheme(\'dark-black\')">Dark Black</span>' +
+                             '<span class="suggestion-tag" onclick="selectTheme(\'colorful\')">Colorful</span>';
+             }
+             
+             analysisHTML += '</div></div>';
+             
+             // Logo info
+             if (data.logo) {
+               analysisHTML += '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>';
+             }
+             
+             analysisContent.innerHTML = analysisHTML;
             
             // Show comprehensive analysis if available
             if (data.totalPages !== undefined) {
@@ -944,6 +974,7 @@
              const waveContainer = document.getElementById('wave-container');
              if (waveContainer) {
                waveContainer.classList.remove('active');
+               console.log('Wave animation deactivated');
              }
            }
         });
@@ -1190,9 +1221,27 @@
           });
         }
         
-        console.log('Application initialized successfully');
-        
-      });
+                 // Test wave animation button
+         testWaveBtn.addEventListener('click', function() {
+           console.log('Test wave button clicked');
+           const waveContainer = document.getElementById('wave-container');
+           if (waveContainer) {
+             waveContainer.classList.add('active');
+             console.log('Test wave activated');
+             
+             // Auto-deactivate after 5 seconds
+             setTimeout(function() {
+               waveContainer.classList.remove('active');
+               console.log('Test wave auto-deactivated');
+             }, 5000);
+           } else {
+             console.error('Wave container not found for test!');
+           }
+         });
+         
+         console.log('Application initialized successfully');
+         
+       });
 
       function normalizeUrl(url) {
         if (!url) return url;
