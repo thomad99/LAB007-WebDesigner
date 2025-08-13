@@ -237,6 +237,90 @@
         color: #667eea;
       }
       
+      /* Wave Animation for Analysis */
+      .wave-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+      
+      .wave-container.active {
+        opacity: 1;
+      }
+      
+      .wave {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(45deg, 
+          rgba(102, 126, 234, 0.1) 0%, 
+          rgba(118, 75, 162, 0.1) 25%, 
+          rgba(102, 126, 234, 0.1) 50%, 
+          rgba(118, 75, 162, 0.1) 75%, 
+          rgba(102, 126, 234, 0.1) 100%);
+        animation: wave-move 8s linear infinite;
+      }
+      
+      .wave:nth-child(2) {
+        animation-delay: -2s;
+        opacity: 0.7;
+      }
+      
+      .wave:nth-child(3) {
+        animation-delay: -4s;
+        opacity: 0.5;
+      }
+      
+      .wave:nth-child(4) {
+        animation-delay: -6s;
+        opacity: 0.3;
+      }
+      
+      @keyframes wave-move {
+        0% {
+          transform: translateX(-50%) translateY(0);
+        }
+        50% {
+          transform: translateX(-25%) translateY(-20px);
+        }
+        100% {
+          transform: translateX(0%) translateY(0);
+        }
+      }
+      
+      /* Analyze button wave effect */
+      .analyze-btn.analyzing {
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .analyze-btn.analyzing::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          transparent, 
+          rgba(255, 255, 255, 0.3), 
+          transparent);
+        animation: analyze-wave 2s infinite;
+      }
+      
+      @keyframes analyze-wave {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      
       .status-error {
         border-color: #dc3545;
         background: #f8d7da;
@@ -573,10 +657,18 @@
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="header">
-        <img src="lab007 grey.PNG" alt="LAB007 AI Website Redesigner - Transform your existing website with AI-powered modern design" style="max-width: 300px; height: auto;">
-      </div>
+         <!-- Wave Animation Container -->
+     <div class="wave-container" id="wave-container">
+       <div class="wave"></div>
+       <div class="wave"></div>
+       <div class="wave"></div>
+       <div class="wave"></div>
+     </div>
+     
+     <div class="container">
+       <div class="header">
+         <img src="lab007 grey.PNG" alt="LAB007 AI Website Redesigner - Transform your existing website with AI-powered modern design" style="max-width: 300px; height: auto;">
+       </div>
       
       <div class="main-content">
         <div class="option-buttons">
@@ -772,9 +864,16 @@
           
           if (isAnalyzing) return;
           
-          isAnalyzing = true;
-          analyzeBtn.disabled = true;
-          analyzeBtn.innerHTML = 'Analyzing...';
+                     isAnalyzing = true;
+           analyzeBtn.disabled = true;
+           analyzeBtn.innerHTML = 'Analyzing...';
+           analyzeBtn.classList.add('analyzing');
+           
+           // Activate wave animation
+           const waveContainer = document.getElementById('wave-container');
+           if (waveContainer) {
+             waveContainer.classList.add('active');
+           }
           
           try {
             console.log('Making analysis request for:', website);
@@ -793,21 +892,24 @@
               throw new Error(data.error);
             }
             
-            // Display analysis results
-            analysisContent.innerHTML = '<div class="analysis-item">' +
-              '<strong>Title:</strong> ' + (data.title || 'Not found') + '</div>' +
-              '<div class="analysis-item">' +
-              '<strong>Description:</strong> ' + (data.description || 'Not found') + '</div>' +
-              '<div class="analysis-item">' +
-              '<strong>Estimated Business Type:</strong> ' + data.estimatedBusinessType + '</div>' +
-              '<div class="analysis-item">' +
-              '<strong>Suggested Themes:</strong>' +
-              '<div class="suggestions">' +
-              data.suggestedThemes.map(function(theme) {
-                return '<span class="suggestion-tag" onclick="selectTheme(\'' + theme + '\')">' + theme + '</span>';
-              }).join('') +
-              '</div></div>' +
-              (data.logo ? '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>' : '');
+                         // Display analysis results
+             analysisContent.innerHTML = '<div class="analysis-item">' +
+               '<strong>Title:</strong> ' + (data.title || 'Not found') + '</div>' +
+               '<div class="analysis-item">' +
+               '<strong>Description:</strong> ' + (data.description || 'Not found') + '</div>' +
+               '<div class="analysis-item">' +
+               '<strong>Estimated Business Type:</strong> ' + (data.estimatedBusinessType || 'Not detected') + '</div>' +
+               '<div class="analysis-item">' +
+               '<strong>Suggested Themes:</strong>' +
+               '<div class="suggestions">' +
+               (data.suggestedThemes && Array.isArray(data.suggestedThemes) ? 
+                 data.suggestedThemes.map(function(theme) {
+                   return '<span class="suggestion-tag" onclick="selectTheme(\'' + theme + '\')">' + theme + '</span>';
+                 }).join('') : 
+                 '<span class="suggestion-tag">Modern</span><span class="suggestion-tag">Professional</span><span class="suggestion-tag">Clean</span>'
+               ) +
+               '</div></div>' +
+               (data.logo ? '<div class="analysis-item"><strong>Logo Found:</strong> Yes</div>' : '');
             
             // Show comprehensive analysis if available
             if (data.totalPages !== undefined) {
@@ -832,11 +934,18 @@
             alert('Error analyzing website: ' + error.message);
             // Hide remix options if analysis fails
             remixOptions.style.display = 'none';
-          } finally {
-            isAnalyzing = false;
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerHTML = 'Analyze Website';
-          }
+                     } finally {
+             isAnalyzing = false;
+             analyzeBtn.disabled = false;
+             analyzeBtn.innerHTML = 'Analyze Website';
+             analyzeBtn.classList.remove('analyzing');
+             
+             // Deactivate wave animation
+             const waveContainer = document.getElementById('wave-container');
+             if (waveContainer) {
+               waveContainer.classList.remove('active');
+             }
+           }
         });
 
         // Theme selection from suggestions
