@@ -163,8 +163,64 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       console.log(`Page ${i + 1} stored on web server`);
     }
     
-    // Store the main content for reference
-    const content = {
+    // Generate mockup image for the home page (first page)
+    console.log('Generating mockup image for home page...');
+    
+    // Update status to show mockup generation
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      ['generating_mockup', jobId]
+    );
+    
+    const homePage = pages[0];
+    const imagePrompt = `Create a professional website mockup image for a ${businessType} business with ${theme} design theme. 
+    
+    Website details:
+    - Title: ${homePage.title}
+    - Description: ${homePage.description || 'Professional business website'}
+    - Theme: ${theme}
+    - Business Type: ${businessType}
+    
+    The mockup should show:
+    - Modern, professional layout
+    - ${theme} color scheme and styling
+    - Responsive design elements
+    - Professional typography
+    - Clean, modern aesthetics
+    
+    Generate a high-quality, realistic website mockup that showcases the redesigned website's appearance.`;
+    
+    try {
+      const imageCompletion = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: imagePrompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        style: "natural"
+      });
+      
+      const mockupImageUrl = imageCompletion.data[0].url;
+      console.log('Mockup image generated successfully:', mockupImageUrl);
+      
+      // Store the mockup image URL in the jobs table
+      await pool.query(
+        'UPDATE jobs SET mockup_url = $1 WHERE id = $2',
+        [mockupImageUrl, jobId]
+      );
+    } catch (imageError) {
+      console.error('Error generating mockup image:', imageError);
+      // Continue without image if there's an error
+    }
+    
+          // Update status to completed
+      await pool.query(
+        'UPDATE jobs SET status = $1 WHERE id = $2',
+        ['completed', jobId]
+      );
+      
+      // Store the main content for reference
+      const content = {
       title: $('title').text().trim(),
       description: $('meta[name="description"]').attr('content') || '',
       logo: findLogo($),

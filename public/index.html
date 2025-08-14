@@ -408,9 +408,36 @@
          text-align: center;
        }
       
-      .copy-btn:hover {
-        background: #5a6268;
-      }
+             .copy-btn:hover {
+         background: #5a6268;
+       }
+       
+       .image-btn {
+         background: #e91e63;
+         color: white;
+         padding: 0.75rem 1.5rem;
+         text-decoration: none;
+         border-radius: 8px;
+         transition: background-color 0.3s ease;
+         font-weight: 600;
+         min-width: 120px;
+         text-align: center;
+         border: none;
+         cursor: pointer;
+         font-size: 0.9rem;
+       }
+       
+       .image-btn:hover {
+         background: #c2185b;
+       }
+       
+       .mockup-item {
+         display: flex;
+         gap: 0.5rem;
+         align-items: center;
+         margin: 0.5rem 0;
+         justify-content: center;
+       }
       
       .download-btn {
         display: inline-block;
@@ -428,10 +455,14 @@
         background: #218838;
       }
       
-      .mockup-result {
-        margin-top: 2rem;
-        text-align: center;
-      }
+             .mockup-result {
+         margin-top: 2rem;
+         text-align: center;
+         background: rgba(255, 255, 255, 0.1);
+         padding: 1.5rem;
+         border-radius: 15px;
+         border: 2px solid rgba(255, 255, 255, 0.2);
+       }
       
       .mockup-result img {
         max-width: 100%;
@@ -1153,6 +1184,16 @@
                    '<p><strong>Progress:</strong> Page ' + (data.current_page || 'Unknown') + ' is being sent to ChatGPT</p>' +
                    '</div>';
                  break;
+                 
+               case 'generating_mockup':
+                 progress = 95;
+                 currentStep = 'Creating Design Mockup';
+                 stepDetails = '<div class="step-info">' +
+                   '<p><strong>What is happening:</strong> AI is generating a visual mockup of your redesigned website</p>' +
+                   '<p><strong>Current task:</strong> Creating professional mockup image with DALL-E</p>' +
+                   '<p><strong>Features:</strong> High-quality design preview, modern aesthetics</p>' +
+                   '</div>';
+                 break;
                 
                              case 'completed':
                  progress = 100;
@@ -1197,16 +1238,27 @@
                  progressContainer.style.display = 'none';
                }
                
-               if (data.demoUrls) {
-                 statusBox.innerHTML += '<div class="demo-links">' +
-                   data.demoUrls.map(function(url, index) {
-                     return '<div class="demo-item">' +
-                       '<a href="' + url + '" target="_blank" class="demo-btn">View Remix</a>' +
-                       '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
-                       '</div>';
-                   }).join('') +
-                   '</div>';
-               }
+                               if (data.demoUrls) {
+                  statusBox.innerHTML += '<div class="demo-links">' +
+                    data.demoUrls.map(function(url, index) {
+                      return '<div class="demo-item">' +
+                        '<a href="' + url + '" target="_blank" class="demo-btn">View Remix</a>' +
+                        '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                        '</div>';
+                    }).join('') +
+                    '</div>';
+                }
+                
+                // Add mockup image if available
+                if (data.mockupUrl) {
+                  statusBox.innerHTML += '<div class="mockup-result">' +
+                    '<h4 style="color: white; margin: 1rem 0;">🎨 Design Preview</h4>' +
+                    '<div class="mockup-item">' +
+                    '<a href="' + data.mockupUrl + '" target="_blank" class="image-btn">View Image Sample</a>' +
+                    '<button onclick="copyToClipboard(\'' + data.mockupUrl + '\')" class="copy-btn">Copy Image Link</button>' +
+                    '</div>' +
+                    '</div>';
+                }
               
                              submitBtn.disabled = false;
                submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
