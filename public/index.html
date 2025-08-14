@@ -164,14 +164,15 @@
         100% { transform: rotate(360deg); }
       }
       
-      #status-box {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        border: 2px solid #e1e5e9;
-        border-radius: 15px;
-        display: none;
-        background: #f8f9fa;
-      }
+             #status-box {
+         margin-top: 2rem;
+         padding: 1.5rem;
+         border: 2px solid #e1e5e9;
+         border-radius: 15px;
+         display: none;
+         background: #000000;
+         color: white;
+       }
       
       .status-active {
         display: block !important;
@@ -319,23 +320,26 @@
         text-align: left;
       }
       
-      .step-info {
-        background: white;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-        margin: 0.5rem 0;
-      }
-      
-      .step-info.success {
-        border-left-color: #28a745;
-        background: #f8fff9;
-      }
-      
-      .step-info.error {
-        border-left-color: #dc3545;
-        background: #fff8f8;
-      }
+             .step-info {
+         background: #1a1a1a;
+         padding: 1rem;
+         border-radius: 8px;
+         border-left: 4px solid #667eea;
+         margin: 0.5rem 0;
+         color: white;
+       }
+       
+       .step-info.success {
+         border-left-color: #28a745;
+         background: #0d2b0d;
+         color: white;
+       }
+       
+       .step-info.error {
+         border-left-color: #dc3545;
+         background: #2b0d0d;
+         color: white;
+       }
       
       .step-info p {
         margin: 0.25rem 0;
@@ -616,12 +620,9 @@
      </div>
      
      <div class="container">
-                           <div class="header">
-                                                           <video autoplay muted loop playsinline style="max-width: 300px; height: auto; border-radius: 10px;">
-             <source src="LAB007 Logo Animation.mp4" type="video/mp4">
-             Your browser does not support the video tag.
-           </video>
-       </div>
+                                 <div class="header">
+        <img src="lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 300px; height: auto; border-radius: 10px;">
+      </div>
       
              <div class="main-content">
          <form id="redesign-form">
@@ -948,20 +949,20 @@
           
                      console.log('Form data:', { website, email, theme, businessType });
           
-          statusBox.className = 'status-active status-loading';
-                     statusBox.innerHTML = '<div class="progress-container">' +
-             '<h3>Starting the redesign process...</h3>' +
-             '<div class="progress-bar">' +
-             '<div class="progress-fill" id="progress-fill"></div>' +
-             '</div>' +
-             '<div class="spinner-container">' +
-             '<video autoplay muted loop playsinline class="progress-spinner">' +
-             '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
-             '</video>' +
-             '</div>' +
-             '<p id="current-step">Initializing...</p>' +
-             '<div class="step-details" id="step-details"></div>' +
-             '</div>';
+                     statusBox.className = 'status-active status-loading';
+                      statusBox.innerHTML = '<div class="progress-container">' +
+              '<h3 style="color: white;">Starting the redesign process...</h3>' +
+              '<div class="progress-bar">' +
+              '<div class="progress-fill" id="progress-fill"></div>' +
+              '</div>' +
+              '<div class="spinner-container">' +
+              '<video autoplay muted loop playsinline class="progress-spinner">' +
+              '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
+              '</video>' +
+              '</div>' +
+              '<p id="current-step" style="color: white;">Initializing...</p>' +
+              '<div class="step-details" id="step-details"></div>' +
+              '</div>';
 
           const formData = {
             website: normalizeUrl(website),
@@ -1108,19 +1109,25 @@
             // Continue polling if not completed or errored
             if (data.status && !data.status.startsWith('error') && data.status !== 'completed') {
               setTimeout(function() { pollStatus(jobId); }, 2000);
-            } else if (data.status === 'completed') {
-              statusBox.className = 'status-active status-success';
-              
-                                                           if (data.demoUrls) {
-                  statusBox.innerHTML += '<div class="demo-links">' +
-                    data.demoUrls.map(function(url, index) {
-                      return '<div class="demo-item">' +
-                        '<a href="' + url + '" target="_blank" class="demo-btn">View Home Page</a>' +
-                        '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
-                        '</div>';
-                    }).join('') +
-                    '</div>';
-                }
+                         } else if (data.status === 'completed') {
+               statusBox.className = 'status-active status-success';
+               
+               // Hide progress elements and show completion with new buttons
+               const progressContainer = document.querySelector('.progress-container');
+               if (progressContainer) {
+                 progressContainer.style.display = 'none';
+               }
+               
+               if (data.demoUrls) {
+                 statusBox.innerHTML += '<div class="demo-links">' +
+                   data.demoUrls.map(function(url, index) {
+                     return '<div class="demo-item">' +
+                       '<a href="' + url + '" target="_blank" class="demo-btn">View Remix</a>' +
+                       '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                       '</div>';
+                   }).join('') +
+                   '</div>';
+               }
               
                              submitBtn.disabled = false;
                submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';

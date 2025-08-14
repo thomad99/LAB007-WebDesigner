@@ -143,7 +143,7 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     console.log('Step 2: Starting AI design generation...');
     console.log('Building AI prompt...');
     
-    const prompt = 'You are a professional web designer tasked with redesigning a website.\n\n' +
+    const prompt = 'You are a world-class web designer and developer tasked with creating an exceptional, modern website redesign.\n\n' +
       'ORIGINAL WEBSITE CONTENT:\n' +
       '- Title: ' + content.title + '\n' +
       '- Description: ' + content.description + '\n' +
@@ -155,18 +155,32 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       '- Navigation items: ' + content.navigation.join(', ') + '\n' +
       '- Contact information: ' + content.contactInfo.join(', ') + '\n' +
       '- Social links: ' + content.socialLinks.join(', ') + '\n\n' +
-      'REQUIREMENTS:\n' +
-      '1. Create a modern, mobile-first responsive design\n' +
-      '2. Use a ' + theme + ' color scheme and aesthetic\n' +
-      '3. Preserve ALL original content and structure\n' +
-      '4. Improve typography, spacing, and visual hierarchy\n' +
-      '5. Add modern UI elements (cards, gradients, shadows)\n' +
-      '6. Ensure the design fits a ' + businessType + ' business\n' +
-      '7. Include proper meta tags and SEO optimization\n' +
-      '8. Make it fully responsive for all devices\n' +
-      '9. Use modern CSS (Grid, Flexbox, CSS variables)\n' +
-      '10. Add subtle animations and hover effects\n\n' +
-      'Generate complete, production-ready HTML/CSS code that can be immediately used.';
+      'DESIGN REQUIREMENTS:\n' +
+      '1. Create a stunning, premium-quality design that looks like it was built by top-tier agencies\n' +
+      '2. Use a sophisticated ' + theme + ' color scheme with carefully chosen complementary colors\n' +
+      '3. Preserve ALL original content and structure while dramatically improving presentation\n' +
+      '4. Implement advanced typography with proper font hierarchy, line heights, and spacing\n' +
+      '5. Add premium UI elements: glassmorphism effects, subtle shadows, gradients, and micro-interactions\n' +
+      '6. Ensure the design perfectly fits a ' + businessType + ' business with appropriate visual language\n' +
+      '7. Include comprehensive meta tags, structured data, and SEO optimization\n' +
+      '8. Create a fully responsive design that works flawlessly on all devices\n' +
+      '9. Use cutting-edge CSS: Grid, Flexbox, CSS variables, custom properties, and modern selectors\n' +
+      '10. Add sophisticated animations: smooth transitions, hover effects, scroll-triggered animations\n' +
+      '11. Implement modern design patterns: card layouts, hero sections, feature grids, and testimonials\n' +
+      '12. Use CSS custom properties for consistent theming and easy customization\n' +
+      '13. Add accessibility features: proper ARIA labels, focus states, and keyboard navigation\n' +
+      '14. Optimize for performance with efficient CSS and minimal JavaScript\n' +
+      '15. Include modern web features: smooth scrolling, lazy loading, and progressive enhancement\n\n' +
+      'TECHNICAL REQUIREMENTS:\n' +
+      '- Use semantic HTML5 elements for better SEO and accessibility\n' +
+      '- Implement CSS Grid and Flexbox for modern layouts\n' +
+      '- Use CSS custom properties for consistent theming\n' +
+      '- Add smooth transitions and animations (0.3s ease-in-out)\n' +
+      '- Ensure mobile-first responsive design\n' +
+      '- Use modern CSS features like backdrop-filter, box-shadow, and gradients\n' +
+      '- Include proper meta viewport and charset tags\n' +
+      '- Optimize for Core Web Vitals and performance\n\n' +
+      'Generate complete, production-ready HTML/CSS code that represents the highest quality of modern web design. The result should look like it was created by a premium design agency.';
 
     console.log('AI Prompt built successfully');
     console.log('Calling OpenAI API...');
@@ -177,14 +191,14 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       messages: [
         {
           role: "system",
-          content: "You are an expert web designer. Generate complete, modern HTML/CSS code that preserves original content while dramatically improving the design and user experience. Use semantic HTML, modern CSS, and ensure the code is production-ready."
+          content: "You are a world-class web designer and developer with expertise in creating premium, award-winning websites. Your designs should rival those created by top-tier design agencies like Pentagram, IDEO, or Frog Design. Generate complete, modern HTML/CSS code that preserves original content while creating an exceptional, premium-quality design that exceeds modern web standards. Use semantic HTML5, cutting-edge CSS, and ensure the code is production-ready with perfect accessibility and performance."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      max_tokens: 6000,
+      max_tokens: 8000,
       temperature: 0.7
     });
 
@@ -612,7 +626,7 @@ app.get('/demo/:jobId', async (req, res) => {
     const generatedHtml = result.rows[0].generated_html;
     const originalWebsite = result.rows[0].website;
     
-    // Enhance the generated HTML with better meta tags and original website reference
+    // Enhance the generated HTML with LAB007 logo header instead of text
     const enhancedHtml = generatedHtml.replace(
       '<head>',
       '<head>' +
@@ -622,38 +636,33 @@ app.get('/demo/:jobId', async (req, res) => {
         '<title>Redesigned: ' + originalWebsite + '</title>' +
         '<style>' +
         '.demo-header {' +
-          'background: #f8f9fa;' +
-          'border-bottom: 2px solid #007bff;' +
-          'padding: 1rem;' +
+          'background: #000000;' +
+          'border-bottom: 2px solid #667eea;' +
+          'padding: 1.5rem;' +
           'text-align: center;' +
           'font-family: Arial, sans-serif;' +
         '}' +
-        '.demo-header h1 {' +
-          'margin: 0;' +
-          'color: #007bff;' +
-          'font-size: 1.5rem;' +
+        '.demo-header .logo {' +
+          'max-width: 200px;' +
+          'height: auto;' +
+          'border-radius: 10px;' +
+          'margin: 0 auto;' +
+          'display: block;' +
         '}' +
-        '.demo-header p {' +
-          'margin: 0.5rem 0 0 0;' +
-          'color: #666;' +
+        '.demo-header .subtitle {' +
+          'color: #ffffff;' +
           'font-size: 0.9rem;' +
-        '}' +
-        '.demo-header a {' +
-          'color: #007bff;' +
-          'text-decoration: none;' +
-        '}' +
-        '.demo-header a:hover {' +
-          'text-decoration: underline;' +
+          'margin-top: 0.5rem;' +
+          'opacity: 0.8;' +
         '}' +
         '</style>'
     ).replace(
       '<body>',
       '<body>' +
         '<div class="demo-header">' +
-          '<h1>AI-Redesigned Website</h1>' +
-          '<p>This is an AI-generated redesign of <a href="' + originalWebsite + '" target="_blank">' + originalWebsite + '</a></p>' +
-          '<p>All original content has been preserved and enhanced with modern design</p>' +
-          '</div>'
+          '<img src="/lab007-trans.PNG" alt="LAB007 Logo" class="logo">' +
+          '<div class="subtitle">AI-Powered Website Redesign</div>' +
+        '</div>'
     );
     
     // Serve the enhanced HTML
