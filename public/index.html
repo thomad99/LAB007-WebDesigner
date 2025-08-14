@@ -792,35 +792,14 @@
                      <!-- Remix Options - Hidden until analysis is complete -->
            <div id="remix-options" style="display: none;">
             
-            <div class="form-row">
-              <div class="form-group">
-                <label for="email">Your Email (Optional):</label>
-                <input type="email" id="email" name="email" placeholder="your@email.com">
-              </div>
-              
-              <div class="form-group">
-                <label for="theme">Preferred Style:</label>
-                <select id="theme" name="theme" required>
-                  <option value="">Select a style</option>
-                  <option value="clean-white">Clean White</option>
-                  <option value="dark-black">Dark Black</option>
-                  <option value="colorful">Colorful</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="form-group full-width">
-              <label for="businessType">Business Type:</label>
-              <select id="businessType" name="businessType" required>
-                <option value="">Select business type</option>
-                <option value="flower-shop">Flower Shop</option>
-                <option value="retail-store">Retail Store</option>
-                <option value="product-info">Product Information</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="tech">Tech</option>
-                <option value="pet-care">Pet Care</option>
-                <option value="local-business">Local Business</option>
-                <option value="blog">Blog</option>
+            <div class="form-group">
+              <label for="theme">Preferred Style:</label>
+              <select id="theme" name="theme" required>
+                <option value="">Select a style</option>
+                <option value="clean-white">Clean White</option>
+                <option value="dark-black">Dark Black</option>
+                <option value="colorful">Colorful</option>
+                <option value="wave">Wave Theme</option>
               </select>
             </div>
             
@@ -1022,16 +1001,14 @@
           }
           
           const website = document.getElementById('website').value;
-          const email = document.getElementById('email').value;
           const theme = document.getElementById('theme').value;
-          const businessType = document.getElementById('businessType').value;
           
-          if (!website || !theme || !businessType) {
+          if (!website || !theme) {
             alert('Please fill in all required fields');
             return;
           }
           
-                     console.log('Form data:', { website, email, theme, businessType });
+          console.log('Form data:', { website, theme });
           
                      statusBox.className = 'status-active status-loading';
                       statusBox.innerHTML = '<div class="progress-container">' +
@@ -1050,9 +1027,7 @@
 
           const formData = {
             website: normalizeUrl(website),
-            email: email,
-            theme: theme,
-            businessType: businessType
+            theme: theme
           };
 
                      try {

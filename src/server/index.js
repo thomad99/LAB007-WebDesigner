@@ -39,8 +39,12 @@ app.post('/api/clone-website', async (req, res) => {
     console.log('Starting website redesign process...');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     
-    const { website, email, theme, businessType } = req.body;
+    const { website, theme } = req.body;
     const jobId = uuidv4();
+    
+    // Set default values for removed fields
+    const email = null;
+    const businessType = 'general';
     
     console.log('Generated job ID:', jobId);
     console.log('Website:', website);
@@ -1139,9 +1143,25 @@ app.post('/api/setup-database', async (req, res) => {
         demo_urls JSONB,
         mockup_url TEXT,
         generated_html TEXT,
+        total_pages INTEGER DEFAULT 1,
+        current_page INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      
+      CREATE TABLE IF NOT EXISTS page_designs (
+        id TEXT PRIMARY KEY,
+        job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
+        page_number INTEGER DEFAULT 1,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        generated_html TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      -- Add missing columns if they don't exist
+      ALTER TABLE jobs ADD COLUMN IF NOT EXISTS total_pages INTEGER DEFAULT 1;
+      ALTER TABLE jobs ADD COLUMN IF NOT EXISTS current_page INTEGER DEFAULT 1;
     `;
     
     await pool.query(setupSQL);
@@ -1182,12 +1202,16 @@ app.get('/api/setup-database', async (req, res) => {
       CREATE TABLE IF NOT EXISTS page_designs (
         id TEXT PRIMARY KEY,
         job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
-        page_number INTEGER NOT NULL,
+        page_number INTEGER DEFAULT 1,
         title TEXT NOT NULL,
         url TEXT NOT NULL,
         generated_html TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      
+      -- Add missing columns if they don't exist
+      ALTER TABLE jobs ADD COLUMN IF NOT EXISTS total_pages INTEGER DEFAULT 1;
+      ALTER TABLE jobs ADD COLUMN IF NOT EXISTS current_page INTEGER DEFAULT 1;
     `;
     
     await pool.query(setupSQL);
