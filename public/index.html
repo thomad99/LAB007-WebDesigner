@@ -794,13 +794,18 @@
             
             <div class="form-group">
               <label for="theme">Preferred Style:</label>
-              <select id="theme" name="theme" required>
-                <option value="">Select a style</option>
-                <option value="clean-white">Clean White</option>
-                <option value="dark-black">Dark Black</option>
-                <option value="colorful">Colorful</option>
-                <option value="wave">Wave Theme</option>
-              </select>
+                             <select id="theme" name="theme" required>
+                 <option value="">Select a style</option>
+                 <option value="clean-white">Clean White</option>
+                 <option value="dark-black">Dark Black</option>
+                 <option value="colorful">Colorful</option>
+                 <option value="wave">Wave Theme</option>
+                 <option value="minimalist">Minimalist</option>
+                 <option value="corporate">Corporate Professional</option>
+                 <option value="creative">Creative & Artistic</option>
+                 <option value="tech-futuristic">Tech Futuristic</option>
+                 <option value="elegant-luxury">Elegant Luxury</option>
+               </select>
             </div>
             
                          <button type="submit" id="submit-btn" class="submit-btn">
@@ -909,10 +914,16 @@
                  }
                });
              } else {
-               // Fallback themes
-               analysisHTML += '<span class="suggestion-tag" onclick="selectTheme(\'clean-white\')">Clean White</span>' +
-                             '<span class="suggestion-tag" onclick="selectTheme(\'dark-black\')">Dark Black</span>' +
-                             '<span class="suggestion-tag" onclick="selectTheme(\'colorful\')">Colorful</span>';
+                               // Fallback themes
+                analysisHTML += '<span class="suggestion-tag" onclick="selectTheme(\'clean-white\')">Clean White</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'dark-black\')">Dark Black</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'colorful\')">Colorful</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'wave\')">Wave Theme</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'minimalist\')">Minimalist</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'corporate\')">Corporate</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'creative\')">Creative</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'tech-futuristic\')">Tech</span>' +
+                              '<span class="suggestion-tag" onclick="selectTheme(\'elegant-luxury\')">Luxury</span>';
              }
              
              analysisHTML += '</div></div>';
@@ -1007,20 +1018,17 @@
           
           console.log('Form data:', { website, theme });
           
-                     statusBox.className = 'status-active status-loading';
-                      statusBox.innerHTML = '<div class="progress-container">' +
-              '<h3 style="color: white;">Starting the redesign process...</h3>' +
-              '<div class="progress-bar">' +
-              '<div class="progress-fill" id="progress-fill"></div>' +
-              '</div>' +
-              '<div class="spinner-container">' +
-              '<video autoplay muted loop playsinline class="progress-spinner">' +
-              '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
-              '</video>' +
-              '</div>' +
-              '<p id="current-step" style="color: white;">Initializing...</p>' +
-              '<div class="step-details" id="step-details"></div>' +
-              '</div>';
+                                statusBox.className = 'status-active status-loading';
+           statusBox.innerHTML = '<div class="progress-container">' +
+             '<h3 style="color: white;">Starting the redesign process...</h3>' +
+             '<div class="spinner-container">' +
+             '<video autoplay muted loop playsinline class="progress-spinner">' +
+             '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
+             '</video>' +
+             '</div>' +
+             '<p id="current-step" style="color: white;">Initializing...</p>' +
+             '<div class="step-details" id="step-details"></div>' +
+             '</div>';
 
           const formData = {
             website: normalizeUrl(website),
@@ -1128,6 +1136,21 @@
                    '<p><strong>Current task:</strong> Creating individual pages for each navigation item with rich content</p>' +
                    '<p><strong>Theme:</strong> ' + document.getElementById('theme').value + '</p>' +
                    '<p><strong>Features:</strong> Modern design, responsive layout, functional navigation</p>' +
+                   '</div>';
+                 break;
+                 
+               case 'processing_page':
+                 // Calculate progress based on current page vs total pages
+                 if (data.current_page && data.total_pages) {
+                   progress = 75 + Math.round((data.current_page / data.total_pages) * 20); // 75% to 95%
+                 } else {
+                   progress = 75;
+                 }
+                 currentStep = 'Processing Individual Pages';
+                 stepDetails = '<div class="step-info">' +
+                   '<p><strong>What is happening:</strong> AI is redesigning each page one by one</p>' +
+                   '<p><strong>Current task:</strong> ' + (data.current_page || 'Unknown') + ' of ' + (data.total_pages || 'Unknown') + ' pages</p>' +
+                   '<p><strong>Progress:</strong> Page ' + (data.current_page || 'Unknown') + ' is being sent to ChatGPT</p>' +
                    '</div>';
                  break;
                 
