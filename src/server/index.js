@@ -92,7 +92,74 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     
     console.log('Extracting website content...');
     
-    // Enhanced content extraction
+    // Enhanced content extraction - identify all pages
+    const pages = identifyPages($, website);
+    console.log(`Found ${pages.length} pages to redesign`);
+    
+    // Store page information in database
+    await pool.query(
+      'UPDATE jobs SET total_pages = $1 WHERE id = $2',
+      [pages.length, jobId]
+    );
+    
+    // Process each page individually
+    const redesignedPages = [];
+    
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      console.log(`Processing page ${i + 1} of ${pages.length}: ${page.title}`);
+      
+      // Update progress in database for frontend
+      await pool.query(
+        'UPDATE jobs SET current_page = $1, status = $2 WHERE id = $3',
+        [i + 1, 'processing_page', jobId]
+      );
+      
+      // Generate AI prompt for this specific page
+      const pagePrompt = buildPagePrompt(page, businessType, theme);
+      
+      // Send to ChatGPT
+      console.log(`Sending page ${i + 1} of ${pages.length} to ChatGPT...`);
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional web designer. Generate complete HTML/CSS code only. No explanations, no markdown, no commentary. Output pure, production-ready code that redesigns the website with modern aesthetics while preserving all original content."
+          },
+          {
+            role: "user",
+            content: pagePrompt
+          }
+        ],
+        max_tokens: 7000,
+        temperature: 0.7
+      });
+      
+      console.log(`ChatGPT returned HTML for page ${i + 1}`);
+      
+      // Clean and store the generated HTML
+      let generatedHtml = completion.choices[0].message.content;
+      generatedHtml = cleanAIResponse(generatedHtml);
+      
+      // Store this page's HTML
+      const pageId = `${jobId}_page_${i + 1}`;
+      await pool.query(
+        'INSERT INTO page_designs (id, job_id, page_number, title, url, generated_html, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+        [pageId, jobId, i + 1, page.title, page.url, generatedHtml]
+      );
+      
+      redesignedPages.push({
+        pageNumber: i + 1,
+        title: page.title,
+        url: page.url,
+        demoUrl: `/demo/${pageId}`
+      });
+      
+      console.log(`Page ${i + 1} stored on web server`);
+    }
+    
+    // Store the main content for reference
     const content = {
       title: $('title').text().trim(),
       description: $('meta[name="description"]').attr('content') || '',
@@ -131,97 +198,16 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     console.log(`   - Contact info: ${content.contactInfo.length}`);
     console.log(`   - Social links: ${content.socialLinks.length}`);
 
-    // Update status to analyzing
-    console.log('Updating job status to "analyzing"...');
+    // Update status to completed
+    console.log('Updating job status to "completed"...');
     await pool.query(
-      'UPDATE jobs SET status = $1 WHERE id = $2',
-      ['analyzing', jobId]
+      'UPDATE jobs SET status = $1, demo_urls = $2 WHERE id = $3',
+      ['completed', JSON.stringify(redesignedPages.map(p => p.demoUrl)), jobId]
     );
-    console.log('Status updated to "analyzing"');
-
-    // 2. Use OpenAI to generate improved designs with better context
-    console.log('Step 2: Starting AI design generation...');
-    console.log('Building AI prompt...');
+    console.log('Status updated to "completed"');
     
-    const prompt = 'You are a world-class web designer and developer tasked with creating an exceptional, modern website redesign.\n\n' +
-      'ORIGINAL WEBSITE CONTENT:\n' +
-      '- Title: ' + content.title + '\n' +
-      '- Description: ' + content.description + '\n' +
-      '- Business Type: ' + businessType + '\n' +
-      '- Theme: ' + theme + '\n\n' +
-      'CONTENT TO PRESERVE AND IMPROVE:\n' +
-      '- Main headings: ' + content.headings.map(function(h) { return h.level + ': ' + h.text; }).join(', ') + '\n' +
-      '- Key paragraphs: ' + content.paragraphs.slice(0, 5).join(' | ') + '\n' +
-      '- Navigation items: ' + content.navigation.join(', ') + '\n' +
-      '- Contact information: ' + content.contactInfo.join(', ') + '\n' +
-      '- Social links: ' + content.socialLinks.join(', ') + '\n\n' +
-      'DESIGN REQUIREMENTS:\n' +
-      '1. Create a stunning, premium-quality design that looks like it was built by top-tier agencies\n' +
-      '2. Use a sophisticated ' + theme + ' color scheme with carefully chosen complementary colors\n' +
-      '3. Preserve ALL original content and structure while dramatically improving presentation\n' +
-      '4. Implement advanced typography with proper font hierarchy, line heights, and spacing\n' +
-      '5. Add premium UI elements: glassmorphism effects, subtle shadows, gradients, and micro-interactions\n' +
-      '6. Ensure the design perfectly fits a ' + businessType + ' business with appropriate visual language\n' +
-      '7. Include comprehensive meta tags, structured data, and SEO optimization\n' +
-      '8. Create a fully responsive design that works flawlessly on all devices\n' +
-      '9. Use cutting-edge CSS: Grid, Flexbox, CSS variables, custom properties, and modern selectors\n' +
-      '10. Add sophisticated animations: smooth transitions, hover effects, scroll-triggered animations\n' +
-      '11. Implement modern design patterns: card layouts, hero sections, feature grids, and testimonials\n' +
-      '12. Use CSS custom properties for consistent theming and easy customization\n' +
-      '13. Add accessibility features: proper ARIA labels, focus states, and keyboard navigation\n' +
-      '14. Optimize for performance with efficient CSS and minimal JavaScript\n' +
-      '15. Include modern web features: smooth scrolling, lazy loading, and progressive enhancement\n\n' +
-      'TECHNICAL REQUIREMENTS:\n' +
-      '- Use semantic HTML5 elements for better SEO and accessibility\n' +
-      '- Implement CSS Grid and Flexbox for modern layouts\n' +
-      '- Use CSS custom properties for consistent theming\n' +
-      '- Add smooth transitions and animations (0.3s ease-in-out)\n' +
-      '- Ensure mobile-first responsive design\n' +
-      '- Use modern CSS features like backdrop-filter, box-shadow, and gradients\n' +
-      '- Include proper meta viewport and charset tags\n' +
-      '- Optimize for Core Web Vitals and performance\n\n' +
-      'Generate complete, production-ready HTML/CSS code that represents the highest quality of modern web design. The result should look like it was created by a premium design agency.';
-
-    console.log('AI Prompt built successfully');
-    console.log('Calling OpenAI API...');
-    console.log(`Prompt length: ${prompt.length} characters`);
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "You are a world-class web designer and developer with expertise in creating premium, award-winning websites. Your designs should rival those created by top-tier design agencies like Pentagram, IDEO, or Frog Design. Generate complete, modern HTML/CSS code that preserves original content while creating an exceptional, premium-quality design that exceeds modern web standards. Use semantic HTML5, cutting-edge CSS, and ensure the code is production-ready with perfect accessibility and performance."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 7000,
-      temperature: 0.7
-    });
-
-    console.log('OpenAI API call completed successfully');
-    console.log(`Response tokens used: ${completion.usage?.total_tokens || 'Unknown'}`);
-    console.log(`Generated content length: ${completion.choices[0].message.content.length} characters`);
-
-    // 3. Store generated designs
-    console.log('Step 3: Storing generated design...');
-    let newDesign = completion.choices[0].message.content;
-    
-    // Clean up the AI response to extract only the HTML/CSS code
-    newDesign = cleanAIResponse(newDesign);
-    
-    const demoUrl = `/demo/${jobId}`;
-
-    console.log('Updating database with generated design...');
-    await pool.query(
-      'UPDATE jobs SET status = $1, demo_urls = $2, generated_html = $3 WHERE id = $4',
-      ['completed', JSON.stringify([demoUrl]), newDesign, jobId]
-    );
-    console.log('Design stored in database successfully');
-    console.log(`Demo URL: ${demoUrl}`);
+    console.log('All pages redesigned and stored successfully');
+    console.log(`Total pages processed: ${redesignedPages.length}`);
 
     // 4. Send email if provided
     if (email) {
@@ -423,6 +409,93 @@ function extractSocialLinks($) {
     }
   });
   return socialLinks;
+}
+
+// Helper function to identify all pages on the website
+function identifyPages($, baseUrl) {
+  const pages = [];
+  const baseUrlObj = new URL(baseUrl);
+  
+  // Add the main page
+  pages.push({
+    title: $('title').text().trim() || 'Home Page',
+    url: baseUrl,
+    content: {
+      headings: $('h1, h2, h3, h4').map((i, el) => ({
+        level: el.name,
+        text: $(el).text().trim(),
+        classes: $(el).attr('class') || ''
+      })).get(),
+      paragraphs: $('p').map((i, el) => $(el).text().trim()).get().filter(text => text.length > 20),
+      images: $('img').map((i, el) => ({
+        src: $(el).attr('src'),
+        alt: $(el).attr('alt') || '',
+        classes: $(el).attr('class') || ''
+      })).get(),
+      navigation: extractNavigation($),
+      contactInfo: extractContactInfo($),
+      socialLinks: extractSocialLinks($)
+    }
+  });
+  
+  // Find internal links that could be other pages
+  $('a[href^="/"], a[href^="' + baseUrlObj.origin + '"]').each((i, el) => {
+    const href = $(el).attr('href');
+    const text = $(el).text().trim();
+    
+    if (text && text.length > 3 && text.length < 50 && href) {
+      let fullUrl = href;
+      if (href.startsWith('/')) {
+        fullUrl = baseUrlObj.origin + href;
+      }
+      
+      // Avoid duplicates and common non-page links
+      if (!pages.find(p => p.url === fullUrl) && 
+          !href.includes('#') && 
+          !href.includes('.pdf') && 
+          !href.includes('.jpg') && 
+          !href.includes('.png')) {
+        
+        pages.push({
+          title: text,
+          url: fullUrl,
+          content: {
+            headings: [text], // We'll get full content when processing
+            paragraphs: [],
+            images: [],
+            navigation: [],
+            contactInfo: [],
+            socialLinks: []
+          }
+        });
+      }
+    }
+  });
+  
+  // Limit to reasonable number of pages (max 10)
+  return pages.slice(0, 10);
+}
+
+// Helper function to build page-specific prompts
+function buildPagePrompt(page, businessType, theme) {
+  return 'REDESIGN THIS PAGE:\n\n' +
+    'BUSINESS: ' + businessType + ' | THEME: ' + theme + '\n' +
+    'PAGE TITLE: ' + page.title + '\n' +
+    'PAGE URL: ' + page.url + '\n\n' +
+    'KEEP THESE EXACT ELEMENTS:\n' +
+    '• Headings: ' + page.content.headings.map(h => h.text).join(' | ') + '\n' +
+    '• Content: ' + page.content.paragraphs.slice(0, 3).join(' | ') + '\n' +
+    '• Navigation: ' + page.content.navigation.join(' | ') + '\n' +
+    '• Contact: ' + page.content.contactInfo.join(' | ') + '\n' +
+    '• Social: ' + page.content.socialLinks.join(' | ') + '\n\n' +
+    'CREATE:\n' +
+    '• Modern ' + theme + ' design with premium aesthetics\n' +
+    '• Mobile-first responsive layout using CSS Grid/Flexbox\n' +
+    '• Professional typography with proper hierarchy\n' +
+    '• Smooth animations and hover effects\n' +
+    '• Glassmorphism and modern UI elements\n' +
+    '• SEO-optimized with proper meta tags\n\n' +
+    'OUTPUT: Complete HTML/CSS code only. No explanations.';
 }
 
 // Add this new endpoint for image mockup
@@ -1100,8 +1173,20 @@ app.get('/api/setup-database', async (req, res) => {
         demo_urls JSONB,
         mockup_url TEXT,
         generated_html TEXT,
+        total_pages INTEGER DEFAULT 1,
+        current_page INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS page_designs (
+        id TEXT PRIMARY KEY,
+        job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
+        page_number INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        generated_html TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
     
@@ -1115,7 +1200,7 @@ app.get('/api/setup-database', async (req, res) => {
           <div style="max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <h1 style="color: #28a745;">✅ Database Setup Complete!</h1>
             <p><strong>Message:</strong> Database initialized successfully</p>
-            <p><strong>Tables Created:</strong> jobs</p>
+            <p><strong>Tables Created:</strong> jobs, page_designs</p>
             <p><strong>Next Step:</strong> You can now use the generate website functionality!</p>
             <a href="/" style="display: inline-block; background: #667eea; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 5px; margin-top: 1rem;">← Back to Website</a>
           </div>
