@@ -147,7 +147,7 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       generatedHtml = cleanAIResponse(generatedHtml);
       
       // Store this page's HTML
-      const pageId = `${jobId}_page_${i + 1}`;
+      const pageId = uuidv4(); // Generate proper UUID for each page
       await pool.query(
         'INSERT INTO page_designs (id, job_id, page_number, title, url, generated_html, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
         [pageId, jobId, i + 1, page.title, page.url, generatedHtml]
@@ -760,20 +760,36 @@ function normalizeUrl(url) {
 }
 
 // Add this after your other endpoints
-app.get('/demo/:jobId', async (req, res) => {
+app.get('/demo/:id', async (req, res) => {
   try {
-    const { jobId } = req.params;
-    const result = await pool.query(
-      'SELECT generated_html, website FROM jobs WHERE id = $1',
-      [jobId]
+    const { id } = req.params;
+    
+    // First try to find it as a page design
+    let result = await pool.query(
+      'SELECT pd.generated_html, j.website FROM page_designs pd JOIN jobs j ON pd.job_id = j.id WHERE pd.id = $1',
+      [id]
     );
     
-    if (result.rows.length === 0 || !result.rows[0].generated_html) {
-      return res.status(404).send('Demo not found');
-    }
+    let generatedHtml, originalWebsite;
     
-    const generatedHtml = result.rows[0].generated_html;
-    const originalWebsite = result.rows[0].website;
+    if (result.rows.length > 0) {
+      // Found as page design
+      generatedHtml = result.rows[0].generated_html;
+      originalWebsite = result.rows[0].website;
+    } else {
+      // Try to find as job (fallback for old format)
+      result = await pool.query(
+        'SELECT generated_html, website FROM jobs WHERE id = $1',
+        [id]
+      );
+      
+      if (result.rows.length === 0 || !result.rows[0].generated_html) {
+        return res.status(404).send('Demo not found');
+      }
+      
+      generatedHtml = result.rows[0].generated_html;
+      originalWebsite = result.rows[0].website;
+    }
     
     // Enhance the generated HTML with LAB007 logo header instead of text
     const enhancedHtml = generatedHtml.replace(
