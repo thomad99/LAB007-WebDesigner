@@ -198,7 +198,7 @@ async function processWebsite(jobId, website, email, theme, businessType) {
           content: prompt
         }
       ],
-      max_tokens: 8000,
+      max_tokens: 7000,
       temperature: 0.7
     });
 
@@ -635,12 +635,50 @@ app.get('/demo/:jobId', async (req, res) => {
         '<meta name="description" content="AI-redesigned version of ' + originalWebsite + '">' +
         '<title>Redesigned: ' + originalWebsite + '</title>' +
         '<style>' +
+        'body {' +
+          'background: linear-gradient(135deg, #2d1b69 0%, #1a103f 25%, #3d1f7a 50%, #2d1b69 75%, #1a103f 100%);' +
+          'background-size: 400% 400%;' +
+          'animation: gradientShift 8s ease infinite;' +
+          'position: relative;' +
+        '}' +
+        'body::before {' +
+          'content: "";' +
+          'position: fixed;' +
+          'top: 0;' +
+          'left: 0;' +
+          'width: 100%;' +
+          'height: 100%;' +
+          'background-image: ' +
+            'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),' +
+            'radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),' +
+            'radial-gradient(circle at 40% 40%, rgba(120, 119, 255, 0.2) 0%, transparent 50%);' +
+          'pointer-events: none;' +
+          'z-index: -1;' +
+        '}' +
+        'body::after {' +
+          'content: "";' +
+          'position: fixed;' +
+          'top: 0;' +
+          'left: 0;' +
+          'width: 100%;' +
+          'height: 100%;' +
+          'background-image: url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.03\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'1\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");' +
+          'pointer-events: none;' +
+          'z-index: -1;' +
+        '}' +
+        '@keyframes gradientShift {' +
+          '0% { background-position: 0% 50%; }' +
+          '50% { background-position: 100% 50%; }' +
+          '100% { background-position: 0% 50%; }' +
+        '}' +
         '.demo-header {' +
-          'background: #000000;' +
+          'background: rgba(45, 27, 105, 0.9);' +
+          'backdrop-filter: blur(10px);' +
           'border-bottom: 2px solid #667eea;' +
           'padding: 1.5rem;' +
           'text-align: center;' +
           'font-family: Arial, sans-serif;' +
+          'box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);' +
         '}' +
         '.demo-header .logo {' +
           'max-width: 200px;' +
@@ -648,12 +686,14 @@ app.get('/demo/:jobId', async (req, res) => {
           'border-radius: 10px;' +
           'margin: 0 auto;' +
           'display: block;' +
+          'filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));' +
         '}' +
         '.demo-header .subtitle {' +
           'color: #ffffff;' +
           'font-size: 0.9rem;' +
           'margin-top: 0.5rem;' +
-          'opacity: 0.8;' +
+          'opacity: 0.9;' +
+          'text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);' +
         '}' +
         '</style>'
     ).replace(
