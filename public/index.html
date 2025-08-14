@@ -938,10 +938,7 @@
             // Show remix options after successful analysis
             remixOptions.style.display = 'block';
             
-            // Auto-fill business type if not already selected
-            if (!document.getElementById('businessType').value) {
-              document.getElementById('businessType').value = data.estimatedBusinessType;
-            }
+                         // Note: Business type field removed - using default 'general' value
             
             console.log('Analysis completed successfully');
             
@@ -1116,11 +1113,11 @@
               case 'analyzing':
                 progress = 50;
                 currentStep = 'AI Content Analysis';
-                stepDetails = '<div class="step-info">' +
-                  '<p><strong>What is happening:</strong> AI is processing your content and planning the redesign</p>' +
-                  '<p><strong>Current task:</strong> Understanding your business type and content structure</p>' +
-                  '<p><strong>Business:</strong> ' + document.getElementById('businessType').value + '</p>' +
-                  '</div>';
+                                 stepDetails = '<div class="step-info">' +
+                   '<p><strong>What is happening:</strong> AI is processing your content and planning the redesign</p>' +
+                   '<p><strong>Current task:</strong> Understanding your content structure and business needs</p>' +
+                   '<p><strong>Business:</strong> General Business (Default)</p>' +
+                   '</div>';
                 break;
                 
                              case 'generating':
