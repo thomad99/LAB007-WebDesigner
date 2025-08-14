@@ -208,7 +208,11 @@ async function processWebsite(jobId, website, email, theme, businessType) {
 
     // 3. Store generated designs
     console.log('Step 3: Storing generated design...');
-    const newDesign = completion.choices[0].message.content;
+    let newDesign = completion.choices[0].message.content;
+    
+    // Clean up the AI response to extract only the HTML/CSS code
+    newDesign = cleanAIResponse(newDesign);
+    
     const demoUrl = `/demo/${jobId}`;
 
     console.log('Updating database with generated design...');
@@ -275,6 +279,74 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     );
     console.log(`Error status updated in database for job ${jobId}`);
   }
+}
+
+// Helper function to clean AI response and extract only HTML/CSS code
+function cleanAIResponse(content) {
+  // Remove common AI explanatory text patterns
+  let cleaned = content;
+  
+  // Remove markdown code blocks and explanatory text
+  cleaned = cleaned.replace(/```html\s*/gi, '');
+  cleaned = cleaned.replace(/```css\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*$/gm, '');
+  
+  // Remove common AI explanatory phrases
+  const explanatoryPatterns = [
+    /Creating a full, production-ready HTML\/CSS code would be too extensive for this platform\. However, I can provide you a basic structure and styling that you can continue to build upon\./gi,
+    /Here's a complete HTML\/CSS implementation:/gi,
+    /Here's the HTML and CSS code:/gi,
+    /Here's a modern, responsive design:/gi,
+    /I'll create a professional website design for you:/gi,
+    /Here's a complete website redesign:/gi,
+    /This design includes:/gi,
+    /Features of this design:/gi,
+    /The design incorporates:/gi,
+    /This modern design features:/gi,
+    /Here's what I've created:/gi,
+    /I've designed a website that:/gi,
+    /This professional design includes:/gi,
+    /The website design features:/gi,
+    /Here's a professional redesign:/gi,
+    /I've created a modern design with:/gi,
+    /This responsive design includes:/gi,
+    /The design showcases:/gi,
+    /Here's a complete redesign featuring:/gi,
+    /I've built a website that:/gi
+  ];
+  
+  explanatoryPatterns.forEach(pattern => {
+    cleaned = cleaned.replace(pattern, '');
+  });
+  
+  // Remove any remaining explanatory text before HTML tags
+  const htmlStartIndex = cleaned.search(/<[^!]/);
+  if (htmlStartIndex > 0) {
+    cleaned = cleaned.substring(htmlStartIndex);
+  }
+  
+  // Remove any text after the last HTML tag
+  const htmlEndIndex = cleaned.lastIndexOf('>');
+  if (htmlEndIndex > 0 && htmlEndIndex < cleaned.length - 1) {
+    cleaned = cleaned.substring(0, htmlEndIndex + 1);
+  }
+  
+  // Clean up extra whitespace and newlines
+  cleaned = cleaned.trim();
+  
+  // Ensure the content starts with <!DOCTYPE html> or <html>
+  if (!cleaned.startsWith('<!DOCTYPE html') && !cleaned.startsWith('<html')) {
+    // If it doesn't start properly, try to find the HTML start
+    const htmlMatch = cleaned.match(/(<!DOCTYPE html[^>]*>.*)/is);
+    if (htmlMatch) {
+      cleaned = htmlMatch[1];
+    }
+  }
+  
+  console.log('AI response cleaned successfully');
+  console.log(`Original length: ${content.length}, Cleaned length: ${cleaned.length}`);
+  
+  return cleaned;
 }
 
 // Helper function to find logo
