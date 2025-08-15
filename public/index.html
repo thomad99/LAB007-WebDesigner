@@ -371,13 +371,19 @@
         font-size: 0.9rem;
       }
       
-      .demo-item {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        margin: 0.5rem 0;
-        justify-content: center;
-      }
+             .demo-item {
+         display: flex;
+         flex-direction: column;
+         gap: 0.5rem;
+         align-items: center;
+         margin: 1rem 0;
+         justify-content: center;
+         background: rgba(255, 255, 255, 0.05);
+         padding: 1.5rem;
+         border-radius: 10px;
+         border: 1px solid rgba(255, 255, 255, 0.1);
+         min-width: 200px;
+       }
       
              .demo-btn {
          background: #667eea;
@@ -796,14 +802,19 @@
          background: linear-gradient(135deg, #c2185b 0%, #ad1457 100%) !important;
        }
        
-       .remix-v2-interface {
-         background: #f8f9fa;
-         border: 1px solid #dee2e6;
-         border-radius: 10px;
-         padding: 2rem;
-         margin: 2rem 0;
-         transition: all 0.3s ease;
-       }
+               .remix-v2-interface {
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 10px;
+          padding: 2rem;
+          margin: 2rem 0;
+          transition: all 0.3s ease;
+          display: none;
+        }
+        
+        .remix-v2-interface.active {
+          display: block !important;
+        }
        
        .remix-v2-results {
          background: #f8f9fa;
@@ -1384,58 +1395,87 @@
           }
         });
         
-        // Remix v2 button click handler
-        remixV2Btn.addEventListener('click', function() {
-          console.log('Remix v2 button clicked');
-          
-          // Hide v1 interface and show v2
-          form.style.display = 'none';
-          remixV2Interface.style.display = 'block';
-          remixV2Results.style.display = 'none';
-          
-          // Update button text
-          submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
-        });
+                 // Remix v2 button click handler
+         remixV2Btn.addEventListener('click', function() {
+           console.log('Remix v2 button clicked');
+           
+           // Hide v1 interface and show v2
+           form.style.display = 'none';
+           remixV2Interface.classList.add('active');
+           remixV2Results.style.display = 'none';
+           
+           // Also hide the status box and remix options when switching to v2
+           statusBox.style.display = 'none';
+           remixOptions.style.display = 'none';
+           
+           // Add visual feedback - change the header to show we're in v2 mode
+           const header = document.querySelector('.header');
+           if (header) {
+             header.innerHTML += '<div id="v2-mode-indicator" style="margin-top: 1rem; padding: 0.5rem 1rem; background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%); color: white; border-radius: 10px; font-weight: 600; display: inline-block;">⚡ Remix v2 Mode Active</div>';
+           }
+           
+           // Update button text
+           submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
+           
+           console.log('Switched to Remix v2 interface');
+         });
         
-        // Back to v1 button handler
-        document.getElementById('back-to-v1').addEventListener('click', function() {
-          console.log('Back to v1 button clicked');
-          
-          // Show v1 interface and hide v2
-          form.style.display = 'block';
-          remixV2Interface.style.display = 'none';
-          remixV2Results.style.display = 'none';
-          
-          // Reset button text
-          submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
-        });
+                 // Back to v1 button handler
+         document.getElementById('back-to-v1').addEventListener('click', function() {
+           console.log('Back to v1 button clicked');
+           
+           // Show v1 interface and hide v2
+           form.style.display = 'block';
+           remixV2Interface.classList.remove('active');
+           remixV2Results.style.display = 'none';
+           
+           // Show remix options again if they were previously visible
+           if (analysisResults.style.display === 'block') {
+             remixOptions.style.display = 'block';
+           }
+           
+           // Remove v2 mode indicator
+           const v2Indicator = document.getElementById('v2-mode-indicator');
+           if (v2Indicator) {
+             v2Indicator.remove();
+           }
+           
+           // Reset button text
+           submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
+           
+           console.log('Switched back to Remix v1 interface');
+         });
         
-        // Generate v2 button click handler
-        generateV2Btn.addEventListener('click', async function() {
-          console.log('Generate v2 button clicked');
-          
-          const siteText = document.getElementById('siteText').value;
-          const sourceUrl = document.getElementById('sourceUrl').value;
-          const styleNotes = document.getElementById('styleNotes').value;
-          const theme = document.getElementById('v2Theme').value;
-          
-          if (!siteText) {
-            alert('Please paste your website text first');
-            return;
-          }
-          
-          // Show results section and hide interface
-          remixV2Interface.style.display = 'none';
-          remixV2Results.style.display = 'block';
-          
-          // Clear previous results
-          v2Progress.textContent = '';
-          v2Download.style.display = 'none';
-          v2Copy.style.display = 'none';
-          
-          // Disable button and show loading
-          generateV2Btn.disabled = true;
-          generateV2Btn.innerHTML = '⚡ Generating...';
+                 // Generate v2 button click handler
+         generateV2Btn.addEventListener('click', async function() {
+           console.log('Generate v2 button clicked');
+           
+           const siteText = document.getElementById('siteText').value;
+           const sourceUrl = document.getElementById('sourceUrl').value;
+           const styleNotes = document.getElementById('styleNotes').value;
+           const theme = document.getElementById('v2Theme').value;
+           
+           if (!siteText) {
+             alert('Please paste your website text first');
+             return;
+           }
+           
+           console.log('Form data:', { siteText: siteText.substring(0, 100) + '...', sourceUrl, styleNotes, theme });
+           
+           // Show results section and hide interface
+           remixV2Interface.style.display = 'none';
+           remixV2Results.style.display = 'block';
+           
+           console.log('Switched to v2 results view');
+           
+           // Clear previous results
+           v2Progress.textContent = 'Starting generation...\n';
+           v2Download.style.display = 'none';
+           v2Copy.style.display = 'none';
+           
+           // Disable button and show loading
+           generateV2Btn.disabled = true;
+           generateV2Btn.innerHTML = '⚡ Generating...';
           
           try {
             console.log('Starting v2 generation:', { sourceUrl, theme, styleNotes, textLength: siteText.length });
@@ -1464,9 +1504,12 @@
               const chunk = decoder.decode(value, { stream: true });
               fullText += chunk;
               
-              // Update progress display
-              v2Progress.textContent += chunk;
-              v2Progress.scrollTop = v2Progress.scrollHeight;
+                           // Update progress display
+             v2Progress.textContent += chunk;
+             v2Progress.scrollTop = v2Progress.scrollHeight;
+             
+             // Add debugging to console
+             console.log('Progress update:', chunk);
             }
             
                                       // Process the streamed content to extract HTML
@@ -1556,11 +1599,17 @@
              html = html.replace('<head>', `<head>\n    ${faviconLink}`);
            }
            
+           // Check if there's already a LAB007 header to avoid duplicates
+           if (html.includes('LAB007') && html.includes('AI-Powered Website Redesign')) {
+             console.log('LAB007 header already exists, skipping duplicate');
+             return html;
+           }
+           
            // Find the <body> tag and add LAB007 logo at the top
            if (html.includes('<body>')) {
              const logoHeader = `
     <!-- LAB007 AI Redesigned Website -->
-    <header style="background: #000000; color: white; padding: 1rem; text-align: center; border-bottom: 3px solid #667eea;">
+    <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; text-align: center; border-bottom: 3px solid #667eea;">
       <img src="/lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 200px; height: auto; margin-bottom: 0.5rem;">
       <div style="font-size: 0.9rem; opacity: 0.8;">AI-Powered Website Redesign</div>
       <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">Remix v2 - Streaming AI</div>
@@ -1720,16 +1769,69 @@
                  progressContainer.style.display = 'none';
                }
                
-                               if (data.demoUrls) {
-                  statusBox.innerHTML += '<div class="demo-links">' +
-                    data.demoUrls.map(function(url, index) {
-                      return '<div class="demo-item">' +
-                        '<a href="' + url + '" target="_blank" class="demo-btn">View Remix</a>' +
-                        '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
-                        '</div>';
-                    }).join('') +
-                    '</div>';
-                }
+                                                               if (data.demoUrls) {
+                   statusBox.innerHTML += '<div class="demo-links">' +
+                     '<h4 style="color: white; margin: 1rem 0;">🎯 Your Remixed Pages</h4>' +
+                     data.demoUrls.map(function(url, index) {
+                       // Try to extract page description from URL or use default
+                       let pageDescription = 'Page ' + (index + 1);
+                       
+                       // Extract page name from URL and make it more readable
+                       if (url) {
+                         const urlParts = url.split('/');
+                         const lastPart = urlParts[urlParts.length - 1];
+                         if (lastPart && lastPart !== '') {
+                           // Convert URL slug to readable text
+                           const readableName = lastPart
+                             .replace(/-/g, ' ')
+                             .replace(/_/g, ' ')
+                             .replace(/\b\w/g, l => l.toUpperCase())
+                             .trim();
+                           
+                           if (readableName && readableName !== 'Index' && readableName !== 'Home') {
+                             pageDescription = readableName;
+                           }
+                         }
+                       }
+                       
+                       // Add common business page descriptions
+                       const commonPages = {
+                         'about': 'About Us',
+                         'about-us': 'About Us',
+                         'aboutus': 'About Us',
+                         'services': 'Our Services',
+                         'products': 'Products',
+                         'contact': 'Contact Us',
+                         'contact-us': 'Contact Us',
+                         'home': 'Home Page',
+                         'index': 'Home Page',
+                         'portfolio': 'Portfolio',
+                         'gallery': 'Gallery',
+                         'blog': 'Blog',
+                         'news': 'News',
+                         'pricing': 'Pricing',
+                         'faq': 'FAQ',
+                         'support': 'Support'
+                       };
+                       
+                       // Check if URL contains any common page keywords
+                       for (const [key, description] of Object.entries(commonPages)) {
+                         if (url.toLowerCase().includes(key)) {
+                           pageDescription = description;
+                           break;
+                         }
+                       }
+                       
+                       return '<div class="demo-item">' +
+                         '<div style="text-align: center; margin-bottom: 0.5rem;">' +
+                         '<strong style="color: white; font-size: 1.1rem;">' + pageDescription + '</strong>' +
+                         '</div>' +
+                         '<a href="' + url + '" target="_blank" class="demo-btn">View Remix</a>' +
+                         '<button onclick="copyToClipboard(\'' + url + '\')" class="copy-btn">Copy Link</button>' +
+                         '</div>';
+                     }).join('') +
+                     '</div>';
+                 }
                 
                 // Add mockup image if available
                 if (data.mockupUrl) {

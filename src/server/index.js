@@ -446,11 +446,17 @@ function addLAB007Branding(html, pageTitle, pageUrl) {
     html = html.replace('<head>', `<head>\n    ${faviconLink}`);
   }
   
+  // Check if there's already a LAB007 header to avoid duplicates
+  if (html.includes('LAB007') && html.includes('AI-Powered Website Redesign')) {
+    console.log('LAB007 header already exists, skipping duplicate');
+    return html;
+  }
+  
   // Find the <body> tag and add LAB007 logo at the top
   if (html.includes('<body>')) {
     const logoHeader = `
     <!-- LAB007 AI Redesigned Website -->
-    <header style="background: #000000; color: white; padding: 1rem; text-align: center; border-bottom: 3px solid #667eea;">
+    <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; text-align: center; border-bottom: 3px solid #667eea;">
       <img src="/lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 200px; height: auto; margin-bottom: 0.5rem;">
       <div style="font-size: 0.9rem; opacity: 0.8;">AI-Powered Website Redesign</div>
       <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">Original: ${pageUrl}</div>

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   demo_urls JSONB,
   mockup_url TEXT,
   generated_html TEXT,
+  chatgpt_prompts JSONB DEFAULT '[]',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -38,4 +39,7 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_jobs_updated_at
     BEFORE UPDATE ON jobs
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column(); 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Add missing columns if they don't exist (for existing databases)
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS chatgpt_prompts JSONB DEFAULT '[]'; 

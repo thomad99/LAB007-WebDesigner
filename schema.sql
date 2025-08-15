@@ -6,6 +6,7 @@ CREATE TABLE jobs (
   business_type VARCHAR(50) NOT NULL,
   status TEXT NOT NULL,
   demo_urls JSONB,
+  chatgpt_prompts JSONB DEFAULT '[]',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ); 
