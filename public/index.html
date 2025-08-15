@@ -1006,21 +1006,32 @@
                      <!-- Remix Options - Hidden until analysis is complete -->
            <div id="remix-options" style="display: none;">
             
-            <div class="form-group">
-              <label for="theme">Preferred Style:</label>
-                             <select id="theme" name="theme" required>
-                 <option value="">Select a style</option>
-                 <option value="clean-white">Clean White</option>
-                 <option value="dark-black">Dark Black</option>
-                 <option value="colorful">Colorful</option>
-                 <option value="wave">Wave Theme</option>
-                 <option value="minimalist">Minimalist</option>
-                 <option value="corporate">Corporate Professional</option>
-                 <option value="creative">Creative & Artistic</option>
-                 <option value="tech-futuristic">Tech Futuristic</option>
-                 <option value="elegant-luxury">Elegant Luxury</option>
+                         <div class="form-group">
+               <label for="theme">Preferred Style:</label>
+                              <select id="theme" name="theme" required>
+                  <option value="">Select a style</option>
+                  <option value="clean-white">Clean White</option>
+                  <option value="dark-black">Dark Black</option>
+                  <option value="colorful">Colorful</option>
+                  <option value="wave">Wave Theme</option>
+                  <option value="minimalist">Minimalist</option>
+                  <option value="corporate">Corporate Professional</option>
+                  <option value="creative">Creative & Artistic</option>
+                  <option value="tech-futuristic">Tech Futuristic</option>
+                  <option value="elegant-luxury">Elegant Luxury</option>
+                </select>
+             </div>
+             
+             <!-- Page Count Selector -->
+             <div id="page-count-selector" class="form-group" style="display: none;">
+               <label id="page-count-label" for="page-count-select">Choose how many pages to remix:</label>
+               <select id="page-count-select" name="pageCount">
+                 <option value="1">1 page</option>
                </select>
-            </div>
+               <small style="color: #666; margin-top: 0.25rem; display: block;">
+                 💡 Tip: Choose fewer pages for faster testing. You can always run more later.
+               </small>
+             </div>
             
                                                    <div class="remix-buttons">
                             <button type="submit" id="submit-btn" class="submit-btn remix-v1">
@@ -1039,14 +1050,18 @@
                   <div id="remix-v2-results" class="remix-v2-results" style="display: none;">
                     <h3 style="color: #333; margin-bottom: 1.5rem;">⚡ Remix v2 Results</h3>
                     <div id="v2-progress" class="v2-progress" style="background:#111; color:#0f0; padding:1rem; border-radius:8px; white-space:pre-wrap; margin-bottom:1rem; font-family: 'Courier New', monospace; max-height: 200px; overflow-y: auto;"></div>
-                    <div id="v2-preview-container" style="margin-top: 1rem;">
-                      <iframe id="v2-preview" style="width:100%; height:70vh; border:2px solid #e1e5e9; border-radius:10px; background: white;"></iframe>
-                    </div>
-                    <div class="v2-actions" style="margin-top: 1rem; text-align: center;">
-                      <button id="v2-download" class="submit-btn" style="background: #28a745; display: none;">💾 Download HTML</button>
-                      <button id="v2-copy" class="submit-btn" style="background: #667eea; display: none;">📋 Copy HTML</button>
-                      <button id="back-to-v2-interface" class="submit-btn" style="background: #6c757d;">← Back to Input</button>
-                    </div>
+                                         <div id="v2-preview-container" style="margin-top: 1rem;">
+                       <div style="text-align: center; padding: 2rem; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 10px;">
+                         <h4 style="color: #333; margin-bottom: 1rem;">HTML Generated Successfully! 🎉</h4>
+                         <p style="color: #666; margin-bottom: 1.5rem;">Your redesigned website HTML has been generated with LAB007 branding.</p>
+                         <button id="v2-open-new-tab" class="submit-btn" style="background: #28a745; margin: 0 0.5rem; display: none;">🌐 Open in New Tab</button>
+                         <button id="v2-download" class="submit-btn" style="background: #667eea; margin: 0 0.5rem; display: none;">💾 Download HTML</button>
+                         <button id="v2-copy" class="submit-btn" style="background: #6c757d; margin: 0 0.5rem; display: none;">📋 Copy HTML</button>
+                       </div>
+                     </div>
+                                         <div class="v2-actions" style="margin-top: 1rem; text-align: center;">
+                       <button id="back-to-v2-interface" class="submit-btn" style="background: #6c757d;">← Back to Input</button>
+                     </div>
                   </div>
          
        </div>
@@ -1070,7 +1085,7 @@
          const remixV2Results = document.getElementById('remix-v2-results');
          const generateV2Btn = document.getElementById('generate-v2-btn');
          const v2Progress = document.getElementById('v2-progress');
-         const v2Preview = document.getElementById('v2-preview');
+         
          const v2Download = document.getElementById('v2-download');
          const v2Copy = document.getElementById('v2-copy');
 
@@ -1189,8 +1204,27 @@
             
             analysisResults.style.display = 'block';
             
-            // Show remix options after successful analysis
-            remixOptions.style.display = 'block';
+                         // Show remix options after successful analysis
+             remixOptions.style.display = 'block';
+             
+             // Show page count selector if multiple pages were found
+             if (data.totalPages && data.totalPages > 1) {
+               document.getElementById('page-count-selector').style.display = 'block';
+               document.getElementById('page-count-label').textContent = `Found ${data.totalPages} pages. Choose how many to remix:`;
+               document.getElementById('page-count-select').innerHTML = '';
+               for (let i = 1; i <= Math.min(data.totalPages, 10); i++) {
+                 const option = document.createElement('option');
+                 option.value = i;
+                 option.textContent = i + (i === 1 ? ' page' : ' pages');
+                 document.getElementById('page-count-select').appendChild(option);
+               }
+               // Set default to 2 pages for faster testing
+               if (data.totalPages >= 2) {
+                 document.getElementById('page-count-select').value = '2';
+               }
+             } else {
+               document.getElementById('page-count-selector').style.display = 'none';
+             }
             
                          // Note: Business type field removed - using default 'general' value
             
@@ -1251,15 +1285,16 @@
             return;
           }
           
-          const website = document.getElementById('website').value;
-          const theme = document.getElementById('theme').value;
-          
-          if (!website || !theme) {
-            alert('Please fill in all required fields');
-            return;
-          }
-          
-          console.log('Form data:', { website, theme });
+                     const website = document.getElementById('website').value;
+           const theme = document.getElementById('theme').value;
+           const pageCount = document.getElementById('page-count-select').value || '1';
+           
+           if (!website || !theme) {
+             alert('Please fill in all required fields');
+             return;
+           }
+           
+           console.log('Form data:', { website, theme, pageCount });
           
           // Show v1 interface and hide v2
           remixV2Interface.style.display = 'none';
@@ -1277,10 +1312,11 @@
             '<div class="step-details" id="step-details"></div>' +
             '</div>';
 
-          const formData = {
-            website: normalizeUrl(website),
-            theme: theme
-          };
+                     const formData = {
+             website: normalizeUrl(website),
+             theme: theme,
+             pageCount: parseInt(pageCount)
+           };
 
           try {
             submitBtn.disabled = true;
@@ -1315,14 +1351,16 @@
             updateProgress(10, 'Job started successfully');
             
             pollStatus(data.jobId);
-          } catch (error) {
-            console.error('Error in form submission:', error);
-            statusBox.className = 'status-active status-error';
-            statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
-              '<p><strong>Error:</strong> ' + error.message + '</p>' +
-              '<p>Please check your input and try again.</p>';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
+                       } catch (error) {
+               console.error('Error in form submission:', error);
+               statusBox.className = 'status-active status-error';
+               statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
+                 '<p><strong>Error:</strong> ' + error.message + '</p>' +
+                 '<p>Please check your input and try again.</p>' +
+                 (error.message.includes('chatgpt_prompts') ? 
+                   '<p><strong>Database Issue:</strong> Missing columns detected. <button onclick="setupDatabase()" style="background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-top: 0.5rem; cursor: pointer;">🔧 Fix Database</button></p>' : '');
+               submitBtn.disabled = false;
+               submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
             
             // Deactivate wave animation on error
             const waveContainer = document.getElementById('wave-container');
@@ -1418,21 +1456,19 @@
               v2Progress.scrollTop = v2Progress.scrollHeight;
             }
             
-                         // Process the streamed content to extract HTML
+                                      // Process the streamed content to extract HTML
              const html = processStreamedContent(fullText);
              
              // Add LAB007 branding to the HTML
              const brandedHtml = addLAB007BrandingV2(html);
              
-             // Render in iframe
-             renderInIframe(brandedHtml);
-            
-            // Show action buttons
-            v2Download.style.display = 'inline-block';
-            v2Copy.style.display = 'inline-block';
-            
-                         // Store HTML for download/copy
+             // Store HTML for download/copy and new tab
              window.generatedV2HTML = brandedHtml;
+             
+             // Show action buttons
+             document.getElementById('v2-open-new-tab').style.display = 'inline-block';
+             document.getElementById('v2-download').style.display = 'inline-block';
+             document.getElementById('v2-copy').style.display = 'inline-block';
             
             console.log('V2 generation completed successfully');
             
@@ -1446,19 +1482,28 @@
           }
         });
         
-        // Download button handler
-        v2Download.addEventListener('click', function() {
-          if (window.generatedV2HTML) {
-            downloadFile('remix-v2.html', window.generatedV2HTML);
-          }
-        });
-        
-        // Copy button handler
-        v2Copy.addEventListener('click', function() {
-          if (window.generatedV2HTML) {
-            copyToClipboard(window.generatedV2HTML);
-          }
-        });
+                 // Open in new tab button handler
+         document.getElementById('v2-open-new-tab').addEventListener('click', function() {
+           if (window.generatedV2HTML) {
+             const newWindow = window.open('', '_blank');
+             newWindow.document.write(window.generatedV2HTML);
+             newWindow.document.close();
+           }
+         });
+         
+         // Download button handler
+         v2Download.addEventListener('click', function() {
+           if (window.generatedV2HTML) {
+             downloadFile('remix-v2.html', window.generatedV2HTML);
+           }
+         });
+         
+         // Copy button handler
+         v2Copy.addEventListener('click', function() {
+           if (window.generatedV2HTML) {
+             copyToClipboard(window.generatedV2HTML);
+           }
+         });
         
         // Back to v2 interface button handler
         document.getElementById('back-to-v2-interface').addEventListener('click', function() {
@@ -1514,12 +1559,7 @@
            return html;
          }
         
-        function renderInIframe(html) {
-          const doc = v2Preview.contentWindow.document;
-          doc.open();
-          doc.write(html);
-          doc.close();
-        }
+        
         
         function downloadFile(filename, text) {
           const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
@@ -1584,20 +1624,21 @@
                    '</div>';
                  break;
                  
-               case 'processing_page':
-                 // Calculate progress based on current page vs total pages
-                 if (data.current_page && data.total_pages) {
-                   progress = 75 + Math.round((data.current_page / data.total_pages) * 20); // 75% to 95%
-                 } else {
-                   progress = 75;
-                 }
-                 currentStep = 'Processing Individual Pages';
-                 stepDetails = '<div class="step-info">' +
-                   '<p><strong>What is happening:</strong> AI is redesigning each page one by one</p>' +
-                   '<p><strong>Current task:</strong> ' + (data.current_page || 'Unknown') + ' of ' + (data.total_pages || 'Unknown') + ' pages</p>' +
-                   '<p><strong>Progress:</strong> Page ' + (data.current_page || 'Unknown') + ' is being sent to ChatGPT</p>' +
-                   '</div>';
-                 break;
+                                case 'processing_page':
+                   // Calculate progress based on current page vs total pages
+                   if (data.current_page && data.total_pages) {
+                     progress = 75 + Math.round((data.current_page / data.total_pages) * 20); // 75% to 95%
+                   } else {
+                     progress = 75;
+                   }
+                   currentStep = 'Processing Individual Pages';
+                   stepDetails = '<div class="step-info">' +
+                     '<p><strong>What is happening:</strong> AI is redesigning each page one by one</p>' +
+                     '<p><strong>Current task:</strong> ' + (data.current_page || 'Unknown') + ' of ' + (data.total_pages || 'Unknown') + ' pages</p>' +
+                     '<p><strong>Progress:</strong> Page ' + (data.current_page || 'Unknown') + ' is being sent to ChatGPT</p>' +
+                     '<p><strong>Speed:</strong> Processing ' + (data.total_pages || 'Unknown') + ' pages for faster testing</p>' +
+                     '</div>';
+                   break;
                  
                case 'generating_mockup':
                  progress = 95;
@@ -1609,14 +1650,15 @@
                    '</div>';
                  break;
                 
-                             case 'completed':
-                 progress = 100;
-                 currentStep = 'Website Ready! 🎉';
-                 stepDetails = '<div class="step-info success">' +
-                   '<p><strong>Your professional redesigned website is ready!</strong></p>' +
-                   '<p><strong>Features:</strong> Multiple unique pages, modern design, responsive layout</p>' +
-                   '</div>';
-                 break;
+                                              case 'completed':
+                   progress = 100;
+                   currentStep = 'Website Ready! 🎉';
+                   stepDetails = '<div class="step-info success">' +
+                     '<p><strong>Your professional redesigned website is ready!</strong></p>' +
+                     '<p><strong>Features:</strong> ' + (data.total_pages || 'Multiple') + ' unique pages, modern design, responsive layout</p>' +
+                     '<p><strong>Speed:</strong> Completed ' + (data.total_pages || 'all') + ' pages for faster testing</p>' +
+                     '</div>';
+                   break;
                 
               default:
                 if (data.status.startsWith('error:')) {
@@ -1963,18 +2005,35 @@
             }
           }
 
-          function togglePrompt(index) {
-            const promptContent = document.getElementById('prompt-content-' + index);
-            const promptHeader = promptContent.previousElementSibling;
-            
-            if (promptContent.classList.contains('active')) {
-              promptContent.classList.remove('active');
-              promptHeader.classList.remove('active');
-            } else {
-              promptContent.classList.add('active');
-              promptHeader.classList.add('active');
-            }
-          }
+                 function togglePrompt(index) {
+         const promptContent = document.getElementById('prompt-content-' + index);
+         const promptHeader = promptContent.previousElementSibling;
+         
+         if (promptContent.classList.contains('active')) {
+           promptContent.classList.remove('active');
+           promptHeader.classList.remove('active');
+         } else {
+           promptContent.classList.add('active');
+           promptHeader.classList.add('active');
+         }
+       }
+       
+       // Database setup function
+       async function setupDatabase() {
+         try {
+           const response = await fetch('/api/setup-database', { method: 'POST' });
+           const data = await response.json();
+           
+           if (data.message) {
+             alert('Database setup completed! Please try your request again.');
+             location.reload();
+           } else {
+             alert('Database setup failed: ' + (data.error || 'Unknown error'));
+           }
+         } catch (error) {
+           alert('Database setup error: ' + error.message);
+         }
+       }
     </script>
   </body>
 </html>

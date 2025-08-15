@@ -40,18 +40,20 @@ app.post('/api/clone-website', async (req, res) => {
     console.log('Starting website redesign process...');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     
-    const { website, theme } = req.body;
+    const { website, theme, pageCount } = req.body;
     const jobId = uuidv4();
     
     // Set default values for removed fields
     const email = null;
     const businessType = 'general';
+    const maxPages = pageCount ? parseInt(pageCount) : 1; // Use provided page count or default to 1
     
     console.log('Generated job ID:', jobId);
     console.log('Website:', website);
     console.log('Email:', email || 'Not provided');
     console.log('Theme:', theme);
     console.log('Business Type:', businessType);
+    console.log('Max Pages to Process:', maxPages);
 
     // Store job in database
     console.log('Storing job in database...');
@@ -63,7 +65,7 @@ app.post('/api/clone-website', async (req, res) => {
 
     // Start the process asynchronously
     console.log('Starting async website processing...');
-    processWebsite(jobId, website, email, theme, businessType);
+    processWebsite(jobId, website, email, theme, businessType, maxPages);
 
     console.log('Sending response to client...');
     res.json({ 
@@ -78,7 +80,7 @@ app.post('/api/clone-website', async (req, res) => {
   }
 });
 
-async function processWebsite(jobId, website, email, theme, businessType) {
+async function processWebsite(jobId, website, email, theme, businessType, maxPages = 1) {
   try {
     console.log(`\nStarting website processing for job ${jobId}`);
     console.log(`Processing website: ${website}`);
@@ -101,19 +103,23 @@ async function processWebsite(jobId, website, email, theme, businessType) {
     const pages = identifyPages($, website);
     console.log(`Found ${pages.length} pages to redesign`);
     
+    // Limit pages based on user selection
+    const pagesToProcess = pages.slice(0, maxPages);
+    console.log(`Processing ${pagesToProcess.length} pages (limited to ${maxPages} as requested)`);
+    
     // Store page information in database
     await pool.query(
       'UPDATE jobs SET total_pages = $1 WHERE id = $2',
-      [pages.length, jobId]
+      [pagesToProcess.length, jobId]
     );
     
             // Process each page individually
         const redesignedPages = [];
         const chatgptPrompts = [];
         
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i];
-          console.log(`Processing page ${i + 1} of ${pages.length}: ${page.title}`);
+        for (let i = 0; i < pagesToProcess.length; i++) {
+          const page = pagesToProcess[i];
+          console.log(`Processing page ${i + 1} of ${pagesToProcess.length}: ${page.title}`);
           
           // Update progress in database for frontend
           await pool.query(
@@ -131,7 +137,7 @@ async function processWebsite(jobId, website, email, theme, businessType) {
           });
           
           // Send to ChatGPT
-          console.log(`Sending page ${i + 1} of ${pages.length} to ChatGPT...`);
+          console.log(`Sending page ${i + 1} of ${pagesToProcess.length} to ChatGPT...`);
           const completion = await openai.chat.completions.create({
             model: "gpt-4",
             messages: [
@@ -182,6 +188,16 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       'UPDATE jobs SET status = $1 WHERE id = $2',
       ['generating_mockup', jobId]
     );
+    
+    // Update the jobs table with chatgpt_prompts if the column exists
+    try {
+      await pool.query(
+        'UPDATE jobs SET chatgpt_prompts = $1 WHERE id = $2',
+        [JSON.stringify(chatgptPrompts), jobId]
+      );
+    } catch (error) {
+      console.log('chatgpt_prompts column not found, skipping update');
+    }
     
     const homePage = pages[0];
     const imagePrompt = `Create a professional website mockup image for a ${businessType} business with ${theme} design theme. 
@@ -891,10 +907,32 @@ app.get('/api/status/:jobId', async (req, res) => {
     const { jobId } = req.params;
     console.log(`Status check requested for job: ${jobId}`);
     
-    const result = await pool.query(
-      'SELECT status, demo_urls, mockup_url, job_type, website, chatgpt_prompts FROM jobs WHERE id = $1',
-      [jobId]
-    );
+    // Get job status - handle missing columns gracefully
+    let result;
+    try {
+      result = await pool.query(
+        'SELECT status, demo_urls, mockup_url, job_type, website, chatgpt_prompts FROM jobs WHERE id = $1',
+        [jobId]
+      );
+    } catch (error) {
+      if (error.code === '42703') { // Column doesn't exist
+        console.log('Some columns missing, using fallback query');
+        result = await pool.query(
+          'SELECT status, website FROM jobs WHERE id = $1',
+          [jobId]
+        );
+        // Add missing columns with default values
+        result.rows[0] = {
+          ...result.rows[0],
+          demo_urls: null,
+          mockup_url: null,
+          job_type: 'website',
+          chatgpt_prompts: []
+        };
+      } else {
+        throw error;
+      }
+    }
     
     if (result.rows.length === 0) {
       console.log(`Job ${jobId} not found`);
@@ -969,6 +1007,55 @@ function normalizeUrl(url) {
   }
   return url;
 }
+
+// Database setup endpoint to add missing columns
+app.post('/api/setup-database', async (req, res) => {
+  try {
+    console.log('Setting up database schema...');
+    
+    // Add missing columns if they don't exist
+    const alterQueries = [
+      'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS total_pages INTEGER DEFAULT 1',
+      'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS current_page INTEGER DEFAULT 1',
+      'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS chatgpt_prompts JSONB DEFAULT \'[]\'',
+      'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS mockup_url TEXT',
+      'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS demo_urls TEXT[]',
+      'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS job_type TEXT DEFAULT \'website\''
+    ];
+    
+    for (const query of alterQueries) {
+      try {
+        await pool.query(query);
+        console.log('Executed:', query);
+      } catch (error) {
+        console.log('Column already exists or error:', error.message);
+      }
+    }
+    
+    // Create page_designs table if it doesn't exist
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS page_designs (
+          id UUID PRIMARY KEY,
+          job_id UUID REFERENCES jobs(id),
+          page_number INTEGER,
+          title TEXT,
+          url TEXT,
+          generated_html TEXT,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log('page_designs table created/verified');
+    } catch (error) {
+      console.log('Error with page_designs table:', error.message);
+    }
+    
+    res.json({ message: 'Database setup completed successfully' });
+  } catch (error) {
+    console.error('Database setup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Add this after your other endpoints
 app.get('/demo/:id', async (req, res) => {
