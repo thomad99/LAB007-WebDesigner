@@ -1418,18 +1418,21 @@
               v2Progress.scrollTop = v2Progress.scrollHeight;
             }
             
-            // Process the streamed content to extract HTML
-            const html = processStreamedContent(fullText);
-            
-            // Render in iframe
-            renderInIframe(html);
+                         // Process the streamed content to extract HTML
+             const html = processStreamedContent(fullText);
+             
+             // Add LAB007 branding to the HTML
+             const brandedHtml = addLAB007BrandingV2(html);
+             
+             // Render in iframe
+             renderInIframe(brandedHtml);
             
             // Show action buttons
             v2Download.style.display = 'inline-block';
             v2Copy.style.display = 'inline-block';
             
-            // Store HTML for download/copy
-            window.generatedV2HTML = html;
+                         // Store HTML for download/copy
+             window.generatedV2HTML = brandedHtml;
             
             console.log('V2 generation completed successfully');
             
@@ -1466,32 +1469,50 @@
           remixV2Results.style.display = 'none';
         });
         
-        // Helper functions for v2
-        function processStreamedContent(fullText) {
-          // Extract HTML from the streamed content
-          // This is a simplified approach - you might need to adjust based on actual API response format
-          const lines = fullText.split(/\r?\n/).filter(l => l.startsWith('data: '));
-          let html = '';
-          
-          for (const line of lines) {
-            if (line === 'data: [DONE]') break;
-            try {
-              const obj = JSON.parse(line.replace('data: ', ''));
-              const candidates = obj?.output ?? obj?.response?.output ?? [];
-              for (const block of candidates) {
-                const parts = block?.content || [];
-                for (const part of parts) {
-                  if (part?.type === 'output_text' || part?.type === 'text') {
-                    html += part?.text || '';
-                  }
-                }
-              }
-            } catch { /* ignore parse errors on partial lines */ }
-          }
-          
-          // If no structured data found, return the raw text (fallback)
-          return html.trim() || fullText;
-        }
+                 // Helper functions for v2
+         function processStreamedContent(fullText) {
+           // Extract HTML from the streamed content
+           // This is a simplified approach - you might need to adjust based on actual API response format
+           const lines = fullText.split(/\r?\n/).filter(l => l.startsWith('data: '));
+           let html = '';
+           
+           for (const line of lines) {
+             if (line === 'data: [DONE]') break;
+             try {
+               const obj = JSON.parse(line.replace('data: ', ''));
+               if (obj.choices && obj.choices[0] && obj.choices[0].delta && obj.choices[0].delta.content) {
+                 html += obj.choices[0].delta.content;
+               }
+             } catch { /* ignore parse errors on partial lines */ }
+           }
+           
+           // If no structured data found, return the raw text (fallback)
+           return html.trim() || fullText;
+         }
+         
+         // Function to add LAB007 branding to v2 HTML
+         function addLAB007BrandingV2(html) {
+           // Find the <head> tag and add favicon
+           if (html.includes('<head>')) {
+             const faviconLink = '<link rel="icon" type="image/png" href="/SpinnerLogo.png">';
+             html = html.replace('<head>', `<head>\n    ${faviconLink}`);
+           }
+           
+           // Find the <body> tag and add LAB007 logo at the top
+           if (html.includes('<body>')) {
+             const logoHeader = `
+    <!-- LAB007 AI Redesigned Website -->
+    <header style="background: #000000; color: white; padding: 1rem; text-align: center; border-bottom: 3px solid #667eea;">
+      <img src="/lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 200px; height: auto; margin-bottom: 0.5rem;">
+      <div style="font-size: 0.9rem; opacity: 0.8;">AI-Powered Website Redesign</div>
+      <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">Remix v2 - Streaming AI</div>
+    </header>`;
+             
+             html = html.replace('<body>', `<body>\n    ${logoHeader}`);
+           }
+           
+           return html;
+         }
         
         function renderInIframe(html) {
           const doc = v2Preview.contentWindow.document;

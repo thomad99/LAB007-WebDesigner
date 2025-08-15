@@ -154,6 +154,9 @@ async function processWebsite(jobId, website, email, theme, businessType) {
           let generatedHtml = completion.choices[0].message.content;
           generatedHtml = cleanAIResponse(generatedHtml);
           
+          // Add LAB007 branding (favicon and logo)
+          generatedHtml = addLAB007Branding(generatedHtml, page.title, page.url);
+          
           // Store this page's HTML
           const pageId = uuidv4(); // Generate proper UUID for each page
           await pool.query(
@@ -409,6 +412,30 @@ function cleanAIResponse(content) {
   return cleaned;
 }
 
+// Function to add LAB007 branding to generated HTML
+function addLAB007Branding(html, pageTitle, pageUrl) {
+  // Find the <head> tag and add favicon
+  if (html.includes('<head>')) {
+    const faviconLink = '<link rel="icon" type="image/png" href="/SpinnerLogo.png">';
+    html = html.replace('<head>', `<head>\n    ${faviconLink}`);
+  }
+  
+  // Find the <body> tag and add LAB007 logo at the top
+  if (html.includes('<body>')) {
+    const logoHeader = `
+    <!-- LAB007 AI Redesigned Website -->
+    <header style="background: #000000; color: white; padding: 1rem; text-align: center; border-bottom: 3px solid #667eea;">
+      <img src="/lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 200px; height: auto; margin-bottom: 0.5rem;">
+      <div style="font-size: 0.9rem; opacity: 0.8;">AI-Powered Website Redesign</div>
+      <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">Original: ${pageUrl}</div>
+    </header>`;
+    
+    html = html.replace('<body>', `<body>\n    ${logoHeader}`);
+  }
+  
+  return html;
+}
+
 // Helper function to find logo
 function findLogo($) {
   // Look for common logo selectors
@@ -656,8 +683,8 @@ Source URL (context only): ${sourceUrl || "N/A"}
 Raw text & menu:
 ${siteText}`;
 
-    // Using the Responses API with text output and streaming
-    const apiRes = await fetch("https://api.openai.com/v1/responses", {
+    // Using the Chat Completions API with streaming
+    const apiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -667,7 +694,7 @@ ${siteText}`;
         model: "gpt-4o",              // Using gpt-4o for better compatibility
         temperature: 0.2,
         stream: true,                // enable streaming
-        input: [
+        messages: [
           {
             role: "system",
             content: "You are an expert web designer and front-end developer. Output only valid HTML."
@@ -689,13 +716,34 @@ ${siteText}`;
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    // Pipe the OpenAI stream to the response
-    apiRes.body.pipe(res);
+    // Handle the streaming response properly
+    console.log('Response status:', apiRes.status);
+    console.log('Response headers:', apiRes.headers);
     
-    apiRes.body.on("error", (err) => {
-      console.error('Streaming error:', err);
-      try { res.end(); } catch {}
-    });
+    if (apiRes.body) {
+      console.log('Streaming response detected');
+      apiRes.body.on("data", (chunk) => {
+        console.log('Received chunk:', chunk.toString().substring(0, 100));
+        res.write(chunk);
+      });
+      
+      apiRes.body.on("end", () => {
+        console.log('Stream ended');
+        res.end();
+      });
+      
+      apiRes.body.on("error", (err) => {
+        console.error('Streaming error:', err);
+        try { res.end(); } catch {}
+      });
+    } else {
+      console.log('Non-streaming response, using fallback');
+      // Fallback for non-streaming responses
+      const data = await apiRes.text();
+      console.log('Fallback data received:', data.substring(0, 200));
+      res.write(data);
+      res.end();
+    }
     
   } catch (error) {
     console.error('Error in Remix v2:', error);
@@ -958,6 +1006,7 @@ app.get('/demo/:id', async (req, res) => {
     const enhancedHtml = generatedHtml.replace(
       '<head>',
       '<head>' +
+        '<link rel="icon" type="image/png" href="/SpinnerLogo.png">' +
         '<meta charset="UTF-8">' +
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
         '<meta name="description" content="AI-redesigned version of ' + originalWebsite + '">' +
