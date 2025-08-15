@@ -199,6 +199,16 @@ async function processWebsite(jobId, website, email, theme, businessType, maxPag
       console.log('chatgpt_prompts column not found, skipping update');
     }
     
+    // Also try to update other missing columns if they don't exist
+    try {
+      await pool.query(
+        'UPDATE jobs SET mockup_url = $1 WHERE id = $2',
+        [mockupUrl, jobId]
+      );
+    } catch (error) {
+      console.log('mockup_url column not found, skipping update');
+    }
+    
     const homePage = pages[0];
     const imagePrompt = `Create a professional website mockup image for a ${businessType} business with ${theme} design theme. 
     

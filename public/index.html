@@ -852,9 +852,16 @@
      </div>
      
      <div class="container">
-                                 <div class="header">
-        <img src="lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 300px; height: auto; border-radius: 10px;">
-      </div>
+                                        <div class="header">
+         <img src="lab007-trans.PNG" alt="LAB007 Logo" style="max-width: 300px; height: auto; border-radius: 10px;">
+         
+         <!-- Database Status Check -->
+         <div id="database-status" style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); display: none;">
+           <h4 style="color: white; margin-bottom: 0.5rem;">⚠️ Database Schema Check</h4>
+           <p style="color: white; margin-bottom: 1rem; font-size: 0.9rem;">If you encounter database errors, click the button below to update your database schema.</p>
+           <button onclick="setupDatabase()" style="background: #28a745; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">🔧 Update Database Schema</button>
+         </div>
+       </div>
       
              <div class="main-content">
          <form id="redesign-form">
@@ -1357,8 +1364,14 @@
                statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
                  '<p><strong>Error:</strong> ' + error.message + '</p>' +
                  '<p>Please check your input and try again.</p>' +
-                 (error.message.includes('chatgpt_prompts') ? 
+                 (error.message.includes('chatgpt_prompts') || error.message.includes('column') || error.message.includes('does not exist') ? 
                    '<p><strong>Database Issue:</strong> Missing columns detected. <button onclick="setupDatabase()" style="background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-top: 0.5rem; cursor: pointer;">🔧 Fix Database</button></p>' : '');
+               
+               // Show database status if it's a database error
+               if (error.message.includes('chatgpt_prompts') || error.message.includes('column') || error.message.includes('does not exist')) {
+                 showDatabaseStatus();
+               }
+               
                submitBtn.disabled = false;
                submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
             
@@ -1577,13 +1590,26 @@
             const response = await fetch('/api/status/' + jobId);
             const data = await response.json();
             
-            if (data.error) {
-              console.error('Status check error:', data.error);
-              statusBox.className = 'status-active status-error';
-              statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
-                '<p><strong>Error:</strong> ' + data.error + '</p>';
-              return;
-            }
+                         if (data.error) {
+               console.error('Status check error:', data.error);
+               statusBox.className = 'status-active status-error';
+               
+                                // Check if it's a database column issue
+                 if (data.error.includes('chatgpt_prompts') || data.error.includes('column') || data.error.includes('does not exist')) {
+                   statusBox.innerHTML = '<h3>Database Schema Issue</h3>' +
+                     '<p><strong>Error:</strong> ' + data.error + '</p>' +
+                     '<p><strong>Solution:</strong> The database needs to be updated with new columns.</p>' +
+                     '<button onclick="setupDatabase()" style="background: #28a745; color: white; border: none; padding: 1rem 2rem; border-radius: 8px; margin-top: 1rem; cursor: pointer; font-size: 1.1rem;">🔧 Fix Database Schema</button>' +
+                     '<p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">This will add the missing columns and allow the process to continue.</p>';
+                   
+                   // Show the database status section at the top
+                   showDatabaseStatus();
+                 } else {
+                 statusBox.innerHTML = '<h3>Error Checking Status</h3>' +
+                   '<p><strong>Error:</strong> ' + data.error + '</p>';
+               }
+               return;
+             }
 
             console.log('Status update for job', jobId, ':', data);
             
@@ -2018,22 +2044,39 @@
          }
        }
        
-       // Database setup function
-       async function setupDatabase() {
-         try {
-           const response = await fetch('/api/setup-database', { method: 'POST' });
-           const data = await response.json();
-           
-           if (data.message) {
-             alert('Database setup completed! Please try your request again.');
-             location.reload();
-           } else {
-             alert('Database setup failed: ' + (data.error || 'Unknown error'));
-           }
-         } catch (error) {
-           alert('Database setup error: ' + error.message);
-         }
-       }
+               // Database setup function
+        async function setupDatabase() {
+          try {
+            const response = await fetch('/api/setup-database', { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.message) {
+              alert('Database setup completed! Please try your request again.');
+              location.reload();
+            } else {
+              alert('Database setup failed: ' + (data.error || 'Unknown error'));
+            }
+          } catch (error) {
+            alert('Database setup error: ' + error.message);
+          }
+        }
+        
+        // Function to show database status section
+        function showDatabaseStatus() {
+          const dbStatus = document.getElementById('database-status');
+          if (dbStatus) {
+            dbStatus.style.display = 'block';
+          }
+        }
+        
+        // Check for database errors on page load and show status if needed
+        document.addEventListener('DOMContentLoaded', function() {
+          // Show database status section if there might be schema issues
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('db_error') === 'true') {
+            showDatabaseStatus();
+          }
+        });
     </script>
   </body>
 </html>
