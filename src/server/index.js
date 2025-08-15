@@ -8,6 +8,7 @@ import cors from 'cors';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
@@ -106,62 +107,69 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       [pages.length, jobId]
     );
     
-    // Process each page individually
-    const redesignedPages = [];
-    
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i];
-      console.log(`Processing page ${i + 1} of ${pages.length}: ${page.title}`);
-      
-      // Update progress in database for frontend
-      await pool.query(
-        'UPDATE jobs SET current_page = $1, status = $2 WHERE id = $3',
-        [i + 1, 'processing_page', jobId]
-      );
-      
-      // Generate AI prompt for this specific page
-      const pagePrompt = buildPagePrompt(page, businessType, theme);
-      
-      // Send to ChatGPT
-      console.log(`Sending page ${i + 1} of ${pages.length} to ChatGPT...`);
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: "You are a professional web designer. Generate complete HTML/CSS code only. No explanations, no markdown, no commentary. Output pure, production-ready code that redesigns the website with modern aesthetics while preserving all original content."
-          },
-          {
-            role: "user",
-            content: pagePrompt
-          }
-        ],
-        max_tokens: 7000,
-        temperature: 0.7
-      });
-      
-      console.log(`ChatGPT returned HTML for page ${i + 1}`);
-      
-      // Clean and store the generated HTML
-      let generatedHtml = completion.choices[0].message.content;
-      generatedHtml = cleanAIResponse(generatedHtml);
-      
-      // Store this page's HTML
-      const pageId = uuidv4(); // Generate proper UUID for each page
-      await pool.query(
-        'INSERT INTO page_designs (id, job_id, page_number, title, url, generated_html, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
-        [pageId, jobId, i + 1, page.title, page.url, generatedHtml]
-      );
-      
-      redesignedPages.push({
-        pageNumber: i + 1,
-        title: page.title,
-        url: page.url,
-        demoUrl: `/demo/${pageId}`
-      });
-      
-      console.log(`Page ${i + 1} stored on web server`);
-    }
+            // Process each page individually
+        const redesignedPages = [];
+        const chatgptPrompts = [];
+        
+        for (let i = 0; i < pages.length; i++) {
+          const page = pages[i];
+          console.log(`Processing page ${i + 1} of ${pages.length}: ${page.title}`);
+          
+          // Update progress in database for frontend
+          await pool.query(
+            'UPDATE jobs SET current_page = $1, status = $2 WHERE id = $3',
+            [i + 1, 'processing_page', jobId]
+          );
+          
+          // Generate AI prompt for this specific page
+          const pagePrompt = buildPagePrompt(page, businessType, theme);
+          
+          // Store the prompt for frontend display
+          chatgptPrompts.push({
+            title: page.title,
+            prompt: pagePrompt
+          });
+          
+          // Send to ChatGPT
+          console.log(`Sending page ${i + 1} of ${pages.length} to ChatGPT...`);
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+              {
+                role: "system",
+                content: "You are an expert web designer and front-end developer with extensive experience in creating modern, responsive websites. Your expertise includes semantic HTML5, modern CSS (Grid, Flexbox, CSS Variables), accessibility best practices, and SEO optimization. Generate complete, production-ready HTML/CSS code that can be immediately used. No explanations, no markdown formatting, no commentary - only pure HTML output."
+              },
+              {
+                role: "user",
+                content: pagePrompt
+              }
+            ],
+            max_tokens: 7000,
+            temperature: 0.2
+          });
+          
+          console.log(`ChatGPT returned HTML for page ${i + 1}`);
+          
+          // Clean and store the generated HTML
+          let generatedHtml = completion.choices[0].message.content;
+          generatedHtml = cleanAIResponse(generatedHtml);
+          
+          // Store this page's HTML
+          const pageId = uuidv4(); // Generate proper UUID for each page
+          await pool.query(
+            'INSERT INTO page_designs (id, job_id, page_number, title, url, generated_html, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+            [pageId, jobId, i + 1, page.title, page.url, generatedHtml]
+          );
+          
+          redesignedPages.push({
+            pageNumber: i + 1,
+            title: page.title,
+            url: page.url,
+            demoUrl: `/demo/${pageId}`
+          });
+          
+          console.log(`Page ${i + 1} stored on web server`);
+        }
     
     // Generate mockup image for the home page (first page)
     console.log('Generating mockup image for home page...');
@@ -217,6 +225,12 @@ async function processWebsite(jobId, website, email, theme, businessType) {
       await pool.query(
         'UPDATE jobs SET status = $1 WHERE id = $2',
         ['completed', jobId]
+      );
+      
+      // Store the prompts in the database
+      await pool.query(
+        'UPDATE jobs SET demo_urls = $1, chatgpt_prompts = $2 WHERE id = $3',
+        [JSON.stringify(redesignedPages.map(p => p.demoUrl)), JSON.stringify(chatgptPrompts), jobId]
       );
       
       // Store the main content for reference
@@ -538,24 +552,44 @@ function identifyPages($, baseUrl) {
 
 // Helper function to build page-specific prompts
 function buildPagePrompt(page, businessType, theme) {
-  return 'REDESIGN THIS PAGE:\n\n' +
-    'BUSINESS: ' + businessType + ' | THEME: ' + theme + '\n' +
-    'PAGE TITLE: ' + page.title + '\n' +
-    'PAGE URL: ' + page.url + '\n\n' +
-    'KEEP THESE EXACT ELEMENTS:\n' +
-    '• Headings: ' + page.content.headings.map(h => h.text).join(' | ') + '\n' +
-    '• Content: ' + page.content.paragraphs.slice(0, 3).join(' | ') + '\n' +
-    '• Navigation: ' + page.content.navigation.join(' | ') + '\n' +
-    '• Contact: ' + page.content.contactInfo.join(' | ') + '\n' +
-    '• Social: ' + page.content.socialLinks.join(' | ') + '\n\n' +
-    'CREATE:\n' +
-    '• Modern ' + theme + ' design with premium aesthetics\n' +
-    '• Mobile-first responsive layout using CSS Grid/Flexbox\n' +
-    '• Professional typography with proper hierarchy\n' +
-    '• Smooth animations and hover effects\n' +
-    '• Glassmorphism and modern UI elements\n' +
-    '• SEO-optimized with proper meta tags\n\n' +
-    'OUTPUT: Complete HTML/CSS code only. No explanations.';
+  return `You are an expert web designer and front-end developer. I will give you a website page to redesign.
+
+PAGE DETAILS:
+- Title: ${page.title}
+- URL: ${page.url}
+- Business Type: ${businessType}
+- Design Theme: ${theme}
+
+SOURCE CONTENT TO PRESERVE:
+• Headings: ${page.content.headings.map(h => h.text).join(' | ')}
+• Main Content: ${page.content.paragraphs.slice(0, 3).join(' | ')}
+• Navigation Items: ${page.content.navigation.join(' | ')}
+• Contact Information: ${page.content.contactInfo.join(' | ')}
+• Social Links: ${page.content.socialLinks.join(' | ')}
+
+REDESIGN REQUIREMENTS:
+Create a **single-page HTML** redesign with a **${theme} theme** and modern styling using only HTML + CSS (no external frameworks).
+
+The HTML must:
+- Contain all the same sections and structure as the source page
+- Paraphrase the text content so it's not identical but maintains the same meaning
+- Use semantic HTML5 tags (header, nav, main, section, article, footer, etc.)
+- Be fully responsive and mobile-friendly
+- Have all CSS inline in a <style> block within the HTML
+- Avoid external dependencies or CDN links
+- Include smooth animations and hover effects
+- Use modern CSS features (Grid, Flexbox, CSS Variables, etc.)
+- Have proper accessibility features (alt text, ARIA labels, etc.)
+- Be SEO-optimized with proper meta tags and structure
+
+DESIGN APPROACH:
+- Apply the ${theme} theme consistently throughout
+- Use modern design principles (glassmorphism, shadows, gradients)
+- Ensure excellent typography hierarchy and readability
+- Create engaging visual elements that enhance the ${businessType} business type
+- Make the design look professional and premium-quality
+
+OUTPUT: Generate complete, production-ready HTML/CSS code only. No explanations, no markdown formatting, no commentary. Output pure HTML that can be immediately used.`;
 }
 
 // Add this new endpoint for image mockup
@@ -593,6 +627,78 @@ app.post('/api/create-mockup', async (req, res) => {
     
   } catch (error) {
     console.error('Error in /api/create-mockup:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add new endpoint for Remix v2 (streaming approach)
+app.post('/api/remix-v2', async (req, res) => {
+  try {
+    console.log('Starting Remix v2 process...');
+    const { sourceUrl, siteText, theme = "dark", styleNotes = "" } = req.body;
+    
+    console.log('Remix v2 request:', { sourceUrl, theme, styleNotes, textLength: siteText?.length || 0 });
+    
+    // Build the system + user prompt for v2
+    const userPrompt = `You are a senior front-end designer.
+Create a single-page HTML document with inline CSS (no frameworks).
+Theme: ${theme.toUpperCase()}. Style notes: ${styleNotes}
+
+Requirements:
+- Keep the same information architecture & menu labels from the provided text.
+- Paraphrase copy; preserve meaning, don't copy verbatim.
+- Strong contrast, accessible focus states, responsive layout.
+- Polished hero, nav, sections, and a simple contact form (no external posts).
+- No external fonts/scripts/images. Use only HTML + <style>.
+- Output ONLY the final HTML.
+
+Source URL (context only): ${sourceUrl || "N/A"}
+Raw text & menu:
+${siteText}`;
+
+    // Using the Responses API with text output and streaming
+    const apiRes = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",              // Using gpt-4o for better compatibility
+        temperature: 0.2,
+        stream: true,                // enable streaming
+        input: [
+          {
+            role: "system",
+            content: "You are an expert web designer and front-end developer. Output only valid HTML."
+          },
+          {
+            role: "user",
+            content: userPrompt
+          }
+        ]
+      })
+    });
+
+    if (!apiRes.ok) {
+      throw new Error(`OpenAI API error: ${apiRes.status} ${apiRes.statusText}`);
+    }
+
+    // Stream chunks back to the browser
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    // Pipe the OpenAI stream to the response
+    apiRes.body.pipe(res);
+    
+    apiRes.body.on("error", (err) => {
+      console.error('Streaming error:', err);
+      try { res.end(); } catch {}
+    });
+    
+  } catch (error) {
+    console.error('Error in Remix v2:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -738,7 +844,7 @@ app.get('/api/status/:jobId', async (req, res) => {
     console.log(`Status check requested for job: ${jobId}`);
     
     const result = await pool.query(
-      'SELECT status, demo_urls, mockup_url, job_type, website FROM jobs WHERE id = $1',
+      'SELECT status, demo_urls, mockup_url, job_type, website, chatgpt_prompts FROM jobs WHERE id = $1',
       [jobId]
     );
     
@@ -790,7 +896,8 @@ app.get('/api/status/:jobId', async (req, res) => {
       jobType: job.job_type,
       demoUrls: job.demo_urls,
       mockupUrl: job.mockup_url,
-      website: job.website
+      website: job.website,
+      chatgptPrompts: job.chatgpt_prompts
     });
     
     console.log(`Status response sent for job ${jobId}`);
@@ -1215,6 +1322,7 @@ app.post('/api/setup-database', async (req, res) => {
         demo_urls JSONB,
         mockup_url TEXT,
         generated_html TEXT,
+        chatgpt_prompts JSONB,
         total_pages INTEGER DEFAULT 1,
         current_page INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1234,6 +1342,7 @@ app.post('/api/setup-database', async (req, res) => {
       -- Add missing columns if they don't exist
       ALTER TABLE jobs ADD COLUMN IF NOT EXISTS total_pages INTEGER DEFAULT 1;
       ALTER TABLE jobs ADD COLUMN IF NOT EXISTS current_page INTEGER DEFAULT 1;
+      ALTER TABLE jobs ADD COLUMN IF NOT EXISTS chatgpt_prompts JSONB;
     `;
     
     await pool.query(setupSQL);
@@ -1265,6 +1374,7 @@ app.get('/api/setup-database', async (req, res) => {
         demo_urls JSONB,
         mockup_url TEXT,
         generated_html TEXT,
+        chatgpt_prompts JSONB,
         total_pages INTEGER DEFAULT 1,
         current_page INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1284,6 +1394,7 @@ app.get('/api/setup-database', async (req, res) => {
       -- Add missing columns if they don't exist
       ALTER TABLE jobs ADD COLUMN IF NOT EXISTS total_pages INTEGER DEFAULT 1;
       ALTER TABLE jobs ADD COLUMN IF NOT EXISTS current_page INTEGER DEFAULT 1;
+      ALTER TABLE jobs ADD COLUMN IF NOT EXISTS chatgpt_prompts JSONB;
     `;
     
     await pool.query(setupSQL);

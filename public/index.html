@@ -438,6 +438,83 @@
          margin: 0.5rem 0;
          justify-content: center;
        }
+       
+       .prompts-section {
+         margin-top: 2rem;
+         background: rgba(255, 255, 255, 0.1);
+         padding: 1.5rem;
+         border-radius: 15px;
+         border: 2px solid rgba(255, 255, 255, 0.2);
+       }
+       
+       .prompts-container {
+         margin-top: 1rem;
+       }
+       
+       .prompt-item {
+         background: rgba(0, 0, 0, 0.3);
+         border-radius: 10px;
+         margin-bottom: 1rem;
+         overflow: hidden;
+         border: 1px solid rgba(255, 255, 255, 0.1);
+       }
+       
+       .prompt-header {
+         background: rgba(255, 255, 255, 0.1);
+         padding: 1rem;
+         margin: 0;
+         cursor: pointer;
+         color: white;
+         font-size: 1rem;
+         display: flex;
+         align-items: center;
+         gap: 0.75rem;
+         transition: background-color 0.3s ease;
+       }
+       
+       .prompt-header:hover {
+         background: rgba(255, 255, 255, 0.2);
+       }
+       
+       .prompt-icon {
+         font-size: 1.2rem;
+       }
+       
+       .prompt-toggle {
+         margin-left: auto;
+         font-size: 0.8rem;
+         transition: transform 0.3s ease;
+       }
+       
+       .prompt-header.active .prompt-toggle {
+         transform: rotate(180deg);
+       }
+       
+       .prompt-content {
+         display: none;
+         padding: 1rem;
+         background: rgba(0, 0, 0, 0.2);
+       }
+       
+       .prompt-content.active {
+         display: block;
+       }
+       
+       .prompt-text {
+         background: rgba(0, 0, 0, 0.5);
+         padding: 1rem;
+         border-radius: 8px;
+         margin-bottom: 1rem;
+         font-family: 'Courier New', monospace;
+         font-size: 0.85rem;
+         line-height: 1.4;
+         color: #e0e0e0;
+         white-space: pre-wrap;
+         word-break: break-word;
+         max-height: 300px;
+         overflow-y: auto;
+         border: 1px solid rgba(255, 255, 255, 0.1);
+       }
       
       .download-btn {
         display: inline-block;
@@ -688,6 +765,81 @@
            grid-template-columns: 1fr;
          }
        }
+      
+       .remix-options {
+         background: #f8f9fa;
+         border: 1px solid #dee2e6;
+         border-radius: 10px;
+         padding: 2rem;
+         margin: 2rem 0;
+         transition: all 0.3s ease;
+       }
+       
+       .remix-buttons {
+         display: flex;
+         gap: 1rem;
+         flex-wrap: wrap;
+       }
+       
+       .remix-v1 {
+         flex: 1;
+         min-width: 200px;
+       }
+       
+       .remix-v2 {
+         flex: 1;
+         min-width: 200px;
+         background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%) !important;
+       }
+       
+       .remix-v2:hover {
+         background: linear-gradient(135deg, #c2185b 0%, #ad1457 100%) !important;
+       }
+       
+       .remix-v2-interface {
+         background: #f8f9fa;
+         border: 1px solid #dee2e6;
+         border-radius: 10px;
+         padding: 2rem;
+         margin: 2rem 0;
+         transition: all 0.3s ease;
+       }
+       
+       .remix-v2-results {
+         background: #f8f9fa;
+         border: 1px solid #dee2e6;
+         border-radius: 10px;
+         padding: 2rem;
+         margin: 2rem 0;
+         transition: all 0.3s ease;
+       }
+       
+       .v2-progress {
+         font-size: 0.9rem;
+         line-height: 1.4;
+       }
+       
+       .v2-actions {
+         display: flex;
+         gap: 1rem;
+         justify-content: center;
+         flex-wrap: wrap;
+       }
+       
+       .v2-actions .submit-btn {
+         min-width: 150px;
+       }
+       
+       @media (max-width: 768px) {
+         .remix-buttons {
+           flex-direction: column;
+         }
+         
+         .v2-actions {
+           flex-direction: column;
+           align-items: center;
+         }
+       }
     </style>
   </head>
   <body>
@@ -706,6 +858,37 @@
       
              <div class="main-content">
          <form id="redesign-form">
+           <!-- Remix v2 Interface (Hidden by default) -->
+           <div id="remix-v2-interface" class="remix-v2-interface" style="display: none;">
+             <h3 style="color: #333; margin-bottom: 1.5rem;">⚡ Remix v2 - Streaming AI Redesign</h3>
+             <div class="form-group full-width">
+               <label for="siteText">Paste your website text & menu structure:</label>
+               <textarea id="siteText" placeholder="Paste your site text & menu here (copy from your website)" rows="10" style="width:100%; font-family: 'Courier New', monospace;"></textarea>
+             </div>
+             <div class="form-group full-width">
+               <label for="sourceUrl">Source Website URL (for context):</label>
+               <input type="url" id="sourceUrl" placeholder="https://www.example.com" style="width:100%;" />
+             </div>
+             <div class="form-group full-width">
+               <label for="styleNotes">Optional: Design notes (fonts, vibe, accent color):</label>
+               <input type="text" id="styleNotes" placeholder="e.g., modern, minimalist, blue accent, sans-serif fonts" style="width:100%;" />
+             </div>
+             <div class="form-group full-width">
+               <label for="v2Theme">Theme:</label>
+               <select id="v2Theme" style="width:100%;">
+                 <option value="dark">Dark Theme</option>
+                 <option value="light">Light Theme</option>
+                 <option value="colorful">Colorful Theme</option>
+                 <option value="minimalist">Minimalist Theme</option>
+               </select>
+             </div>
+             <button type="button" id="generate-v2-btn" class="submit-btn" style="background: #e91e63;">
+               ⚡ Generate Streaming HTML
+             </button>
+             <button type="button" id="back-to-v1" class="submit-btn" style="background: #6c757d; margin-top: 1rem;">
+               ← Back to Remix v1
+             </button>
+           </div>
           <div class="form-section">
             <div class="form-group full-width">
               <label for="website">Your Current Website URL:</label>
@@ -839,13 +1022,32 @@
                </select>
             </div>
             
-                         <button type="submit" id="submit-btn" class="submit-btn">
-               Generate Professional Redesigned Website
-             </button>
+                                                   <div class="remix-buttons">
+                            <button type="submit" id="submit-btn" class="submit-btn remix-v1">
+                              🚀 Remix v1 - Multi-Page AI
+                            </button>
+                            <button type="button" id="remix-v2-btn" class="submit-btn remix-v2">
+                              ⚡ Remix v2 - Streaming AI
+                            </button>
+                          </div>
           </div>
         </form>
         
-                 <div id="status-box"></div>
+                                   <div id="status-box"></div>
+                  
+                  <!-- Remix v2 Results Section -->
+                  <div id="remix-v2-results" class="remix-v2-results" style="display: none;">
+                    <h3 style="color: #333; margin-bottom: 1.5rem;">⚡ Remix v2 Results</h3>
+                    <div id="v2-progress" class="v2-progress" style="background:#111; color:#0f0; padding:1rem; border-radius:8px; white-space:pre-wrap; margin-bottom:1rem; font-family: 'Courier New', monospace; max-height: 200px; overflow-y: auto;"></div>
+                    <div id="v2-preview-container" style="margin-top: 1rem;">
+                      <iframe id="v2-preview" style="width:100%; height:70vh; border:2px solid #e1e5e9; border-radius:10px; background: white;"></iframe>
+                    </div>
+                    <div class="v2-actions" style="margin-top: 1rem; text-align: center;">
+                      <button id="v2-download" class="submit-btn" style="background: #28a745; display: none;">💾 Download HTML</button>
+                      <button id="v2-copy" class="submit-btn" style="background: #667eea; display: none;">📋 Copy HTML</button>
+                      <button id="back-to-v2-interface" class="submit-btn" style="background: #6c757d;">← Back to Input</button>
+                    </div>
+                  </div>
          
        </div>
      </div>
@@ -861,6 +1063,16 @@
          const analysisContent = document.getElementById('analysis-content');
          const remixOptions = document.getElementById('remix-options');
          const submitBtn = document.getElementById('submit-btn');
+         
+         // Remix v2 elements
+         const remixV2Btn = document.getElementById('remix-v2-btn');
+         const remixV2Interface = document.getElementById('remix-v2-interface');
+         const remixV2Results = document.getElementById('remix-v2-results');
+         const generateV2Btn = document.getElementById('generate-v2-btn');
+         const v2Progress = document.getElementById('v2-progress');
+         const v2Preview = document.getElementById('v2-preview');
+         const v2Download = document.getElementById('v2-download');
+         const v2Copy = document.getElementById('v2-copy');
 
                  console.log('Elements found:', {
            form: !!form,
@@ -1049,36 +1261,40 @@
           
           console.log('Form data:', { website, theme });
           
-                                statusBox.className = 'status-active status-loading';
-           statusBox.innerHTML = '<div class="progress-container">' +
-             '<h3 style="color: white;">Starting the redesign process...</h3>' +
-             '<div class="spinner-container">' +
-             '<video autoplay muted loop playsinline class="progress-spinner">' +
-             '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
-             '</video>' +
-             '</div>' +
-             '<p id="current-step" style="color: white;">Initializing...</p>' +
-             '<div class="step-details" id="step-details"></div>' +
-             '</div>';
+          // Show v1 interface and hide v2
+          remixV2Interface.style.display = 'none';
+          remixV2Results.style.display = 'none';
+          
+          statusBox.className = 'status-active status-loading';
+          statusBox.innerHTML = '<div class="progress-container">' +
+            '<h3 style="color: white;">Starting the redesign process...</h3>' +
+            '<div class="spinner-container">' +
+            '<video autoplay muted loop playsinline class="progress-spinner">' +
+            '<source src="LAB007 Spinner.mp4" type="video/mp4">' +
+            '</video>' +
+            '</div>' +
+            '<p id="current-step" style="color: white;">Initializing...</p>' +
+            '<div class="step-details" id="step-details"></div>' +
+            '</div>';
 
           const formData = {
             website: normalizeUrl(website),
             theme: theme
           };
 
-                     try {
-                           submitBtn.disabled = true;
-              submitBtn.innerHTML = '<video autoplay muted loop playsinline style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"><source src="LAB007 Spinner.mp4" type="video/mp4"></video>Processing...';
-             
-             // Activate wave animation for redesign process
-             const waveContainer = document.getElementById('wave-container');
-             if (waveContainer) {
-               waveContainer.classList.add('active');
-               console.log('Wave animation activated for redesign');
-             }
-             
-             const endpoint = '/api/clone-website';
-             console.log('Making request to:', endpoint);
+          try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<video autoplay muted loop playsinline style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"><source src="LAB007 Spinner.mp4" type="video/mp4"></video>Processing...';
+            
+            // Activate wave animation for redesign process
+            const waveContainer = document.getElementById('wave-container');
+            if (waveContainer) {
+              waveContainer.classList.add('active');
+              console.log('Wave animation activated for redesign');
+            }
+            
+            const endpoint = '/api/clone-website';
+            console.log('Making request to:', endpoint);
             
             const response = await fetch(endpoint, {
               method: 'POST',
@@ -1099,24 +1315,201 @@
             updateProgress(10, 'Job started successfully');
             
             pollStatus(data.jobId);
-                       } catch (error) {
-               console.error('Error in form submission:', error);
-               statusBox.className = 'status-active status-error';
-               statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
-                 '<p><strong>Error:</strong> ' + error.message + '</p>' +
-                 '<p>Please check your input and try again.</p>';
-               submitBtn.disabled = false;
-               submitBtn.innerHTML = '🚀 Generate Professional Redesigned Website';
-               
-               // Deactivate wave animation on error
-               const waveContainer = document.getElementById('wave-container');
-               if (waveContainer) {
-                 waveContainer.classList.remove('active');
-                 console.log('Wave animation deactivated due to error');
-               }
-             }
+          } catch (error) {
+            console.error('Error in form submission:', error);
+            statusBox.className = 'status-active status-error';
+            statusBox.innerHTML = '<h3>Error Starting Process</h3>' +
+              '<p><strong>Error:</strong> ' + error.message + '</p>' +
+              '<p>Please check your input and try again.</p>';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
+            
+            // Deactivate wave animation on error
+            const waveContainer = document.getElementById('wave-container');
+            if (waveContainer) {
+              waveContainer.classList.remove('active');
+              console.log('Wave animation deactivated due to error');
+            }
+          }
         });
-
+        
+        // Remix v2 button click handler
+        remixV2Btn.addEventListener('click', function() {
+          console.log('Remix v2 button clicked');
+          
+          // Hide v1 interface and show v2
+          form.style.display = 'none';
+          remixV2Interface.style.display = 'block';
+          remixV2Results.style.display = 'none';
+          
+          // Update button text
+          submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
+        });
+        
+        // Back to v1 button handler
+        document.getElementById('back-to-v1').addEventListener('click', function() {
+          console.log('Back to v1 button clicked');
+          
+          // Show v1 interface and hide v2
+          form.style.display = 'block';
+          remixV2Interface.style.display = 'none';
+          remixV2Results.style.display = 'none';
+          
+          // Reset button text
+          submitBtn.innerHTML = '🚀 Remix v1 - Multi-Page AI';
+        });
+        
+        // Generate v2 button click handler
+        generateV2Btn.addEventListener('click', async function() {
+          console.log('Generate v2 button clicked');
+          
+          const siteText = document.getElementById('siteText').value;
+          const sourceUrl = document.getElementById('sourceUrl').value;
+          const styleNotes = document.getElementById('styleNotes').value;
+          const theme = document.getElementById('v2Theme').value;
+          
+          if (!siteText) {
+            alert('Please paste your website text first');
+            return;
+          }
+          
+          // Show results section and hide interface
+          remixV2Interface.style.display = 'none';
+          remixV2Results.style.display = 'block';
+          
+          // Clear previous results
+          v2Progress.textContent = '';
+          v2Download.style.display = 'none';
+          v2Copy.style.display = 'none';
+          
+          // Disable button and show loading
+          generateV2Btn.disabled = true;
+          generateV2Btn.innerHTML = '⚡ Generating...';
+          
+          try {
+            console.log('Starting v2 generation:', { sourceUrl, theme, styleNotes, textLength: siteText.length });
+            
+            const response = await fetch('/api/remix-v2', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ sourceUrl, siteText, theme, styleNotes })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Handle streaming response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+            
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              
+              const chunk = decoder.decode(value, { stream: true });
+              fullText += chunk;
+              
+              // Update progress display
+              v2Progress.textContent += chunk;
+              v2Progress.scrollTop = v2Progress.scrollHeight;
+            }
+            
+            // Process the streamed content to extract HTML
+            const html = processStreamedContent(fullText);
+            
+            // Render in iframe
+            renderInIframe(html);
+            
+            // Show action buttons
+            v2Download.style.display = 'inline-block';
+            v2Copy.style.display = 'inline-block';
+            
+            // Store HTML for download/copy
+            window.generatedV2HTML = html;
+            
+            console.log('V2 generation completed successfully');
+            
+          } catch (error) {
+            console.error('Error in v2 generation:', error);
+            v2Progress.textContent += `\n\n❌ Error: ${error.message}`;
+          } finally {
+            // Re-enable button
+            generateV2Btn.disabled = false;
+            generateV2Btn.innerHTML = '⚡ Generate Streaming HTML';
+          }
+        });
+        
+        // Download button handler
+        v2Download.addEventListener('click', function() {
+          if (window.generatedV2HTML) {
+            downloadFile('remix-v2.html', window.generatedV2HTML);
+          }
+        });
+        
+        // Copy button handler
+        v2Copy.addEventListener('click', function() {
+          if (window.generatedV2HTML) {
+            copyToClipboard(window.generatedV2HTML);
+          }
+        });
+        
+        // Back to v2 interface button handler
+        document.getElementById('back-to-v2-interface').addEventListener('click', function() {
+          console.log('Back to v2 interface button clicked');
+          
+          // Show v2 interface and hide results
+          remixV2Interface.style.display = 'block';
+          remixV2Results.style.display = 'none';
+        });
+        
+        // Helper functions for v2
+        function processStreamedContent(fullText) {
+          // Extract HTML from the streamed content
+          // This is a simplified approach - you might need to adjust based on actual API response format
+          const lines = fullText.split(/\r?\n/).filter(l => l.startsWith('data: '));
+          let html = '';
+          
+          for (const line of lines) {
+            if (line === 'data: [DONE]') break;
+            try {
+              const obj = JSON.parse(line.replace('data: ', ''));
+              const candidates = obj?.output ?? obj?.response?.output ?? [];
+              for (const block of candidates) {
+                const parts = block?.content || [];
+                for (const part of parts) {
+                  if (part?.type === 'output_text' || part?.type === 'text') {
+                    html += part?.text || '';
+                  }
+                }
+              }
+            } catch { /* ignore parse errors on partial lines */ }
+          }
+          
+          // If no structured data found, return the raw text (fallback)
+          return html.trim() || fullText;
+        }
+        
+        function renderInIframe(html) {
+          const doc = v2Preview.contentWindow.document;
+          doc.open();
+          doc.write(html);
+          doc.close();
+        }
+        
+        function downloadFile(filename, text) {
+          const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+        
         async function pollStatus(jobId) {
           try {
             console.log('Polling status for job:', jobId);
@@ -1256,6 +1649,28 @@
                     '<div class="mockup-item">' +
                     '<a href="' + data.mockupUrl + '" target="_blank" class="image-btn">View Image Sample</a>' +
                     '<button onclick="copyToClipboard(\'' + data.mockupUrl + '\')" class="copy-btn">Copy Image Link</button>' +
+                    '</div>' +
+                    '</div>';
+                }
+                
+                // Add ChatGPT prompts section if available
+                if (data.chatgptPrompts && data.chatgptPrompts.length > 0) {
+                  statusBox.innerHTML += '<div class="prompts-section">' +
+                    '<h4 style="color: white; margin: 1rem 0;">🤖 ChatGPT Prompts Used</h4>' +
+                    '<div class="prompts-container">' +
+                    data.chatgptPrompts.map(function(prompt, index) {
+                      return '<div class="prompt-item">' +
+                        '<h5 onclick="togglePrompt(' + index + ')" class="prompt-header">' +
+                        '<span class="prompt-icon">📄</span>' +
+                        'Page ' + (index + 1) + ': ' + (prompt.title || 'Untitled') +
+                        '<span class="prompt-toggle">▼</span>' +
+                        '</h5>' +
+                        '<div id="prompt-content-' + index + '" class="prompt-content">' +
+                        '<div class="prompt-text">' + prompt.prompt + '</div>' +
+                        '<button onclick="copyToClipboard(\'' + prompt.prompt.replace(/'/g, '\\\'') + '\')" class="copy-btn">Copy Prompt</button>' +
+                        '</div>' +
+                        '</div>';
+                    }).join('') +
                     '</div>' +
                     '</div>';
                 }
@@ -1524,6 +1939,19 @@
             } else {
               section.classList.add('active');
               header.classList.add('active');
+            }
+          }
+
+          function togglePrompt(index) {
+            const promptContent = document.getElementById('prompt-content-' + index);
+            const promptHeader = promptContent.previousElementSibling;
+            
+            if (promptContent.classList.contains('active')) {
+              promptContent.classList.remove('active');
+              promptHeader.classList.remove('active');
+            } else {
+              promptContent.classList.add('active');
+              promptHeader.classList.add('active');
             }
           }
     </script>

@@ -1,0 +1,322 @@
+import React from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, Mail, ArrowRight } from "lucide-react";
+
+/**
+ * Dark‑themed single‑page redesign for ktmcanvas.com using paraphrased copy from the live site.
+ * Sections: Home, Products, Materials, About, Events, Contact.
+ * Replace email/links with your actual endpoints. Imagery is represented as placeholders.
+ */
+
+const nav = [
+  { label: "Home", href: "#home" },
+  { label: "Products", href: "#products" },
+  { label: "Materials", href: "#materials" },
+  { label: "About", href: "#about" },
+  { label: "Events", href: "#events" },
+  { label: "Contact", href: "#contact" },
+];
+
+const content = {
+  brand: "KTM Custom Marine Canvas",
+  tagline: "Premium marine canvas, crafted for years on the water",
+  hero: {
+    headline: "The finest marine canvas money can buy—built by specialists",
+    subhead:
+      "Family‑run craftsmanship with decades of combined experience. We design, pattern, and build canvas and upholstery that fit right, look sharp, and survive real marine life.",
+    ctaPrimary: "Get a Quote",
+    ctaSecondary: "See Our Work",
+  },
+  productsIntro:
+    "From biminis to hard‑top enclosures, we tailor every piece to your boat, your waters, and your style.",
+  products: [
+    {
+      title: "Biminis & Enclosures",
+      points: [
+        "Precision‑patterned frames and panels",
+        "Clear sightlines with quality window materials",
+        "Vent and zip options for comfort",
+      ],
+    },
+    {
+      title: "Cockpit & Bow Covers",
+      points: [
+        "Tight, clean fits that shed water",
+        "Snap or track‑mounted systems",
+        "Travel and storage options",
+      ],
+    },
+    {
+      title: "Storage / Mooring Covers",
+      points: [
+        "Durable builds for long‑term protection",
+        "Reinforced chafe points",
+        "Breathable, UV‑resistant fabrics",
+      ],
+    },
+    {
+      title: "Hard‑Top & T‑Top Enclosures",
+      points: [
+        "Custom panels with smooth zipper action",
+        "Seam placement for visibility and strength",
+        "Hardware matched to saltwater use",
+      ],
+    },
+    {
+      title: "Sprayhoods",
+      points: [
+        "Low‑profile protection from spray and wind",
+        "Stiffness where it matters for shape",
+        "Clean seams for a factory look",
+      ],
+    },
+    {
+      title: "Console / Specialty Covers",
+      points: [
+        "Consoles, leaning posts, electronics",
+        "Template‑driven repeatability",
+        "Easy on/off designs",
+      ],
+    },
+    {
+      title: "Upholstery",
+      points: [
+        "Foam, vinyl, and stitching built for marine wear",
+        "OEM‑style replacements or upgrades",
+        "Color and texture choices to match deck and trim",
+      ],
+    },
+    {
+      title: "Luxury Woven Flooring",
+      points: [
+        "Custom cut to your deck pattern",
+        "Textured, color‑matched options",
+        "Easy care and non‑skid performance",
+      ],
+    },
+  ],
+  materials: {
+    intro:
+      "We select proven marine‑grade components from leaders in canvas, clear vinyl, and threads—paired with the right hardware and techniques for Florida sun and salt.",
+    bullets: [
+      "Sun‑resistant canvas and technical fabrics",
+      "Strataglass® and Barrett Bonded window systems",
+      "Gore® Tenara® thread for long‑life seams",
+      "Stainless snaps, zips, and fittings for corrosion resistance",
+    ],
+    links: [
+      { label: "Sunbrella®", href: "https://www.sunbrella.com/" },
+      { label: "Strataglass®", href: "https://www.strataglass.com/" },
+      { label: "Barrett Bonded Windows", href: "https://barrettplastics.com/" },
+    ],
+  },
+  about: {
+    blurb:
+      "We’re a small team with big‑boat standards—certified marine fabricator experience, OEM and dealership background, and a service mindset. Our work focuses on fit, finish, and follow‑through.",
+    stats: [
+      "25+ years serving boaters",
+      "100+ years combined team experience",
+      "Certified marine fabrication standards",
+      "Mobile service available",
+      "Fully insured",
+    ],
+  },
+  events: {
+    lead: "Catch us at regional boat shows and local events.",
+    items: [
+      {
+        date: "Oct 16 (past post)",
+        title: "Visit Us at the Tampa Bay Boat Show",
+        cta: "Event Details",
+        href: "#",
+      },
+      {
+        date: "Dec 1–4 (archived)",
+        title: "St. Petersburg Boat Show — coupons and info",
+        cta: "See Archive",
+        href: "#",
+      },
+    ],
+  },
+  contact: {
+    email: "ktmstancil@aol.com",
+    promise: "Tell us about your boat and goals—most inquiries answered within 1 business day.",
+  },
+  footer: "© KTM Canvas. All rights reserved.",
+};
+
+const Section = ({ id, title, intro, children }: any) => (
+  <section id={id} className="max-w-6xl mx-auto px-4 md:px-8 py-16">
+    {title && (
+      <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-4xl font-semibold tracking-tight">
+        {title}
+      </motion.h2>
+    )}
+    {intro && <p className="mt-3 text-slate-300 max-w-2xl">{intro}</p>}
+    <div className="mt-8">{children}</div>
+  </section>
+);
+
+const NavBar = () => (
+  <div className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/85 backdrop-blur">
+    <nav className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-8 h-16">
+      <div className="font-semibold text-slate-100">{content.brand}</div>
+      <ul className="hidden md:flex items-center gap-6 text-slate-300">
+        {nav.map((n) => (
+          <li key={n.href}>
+            <a href={n.href} className="text-sm hover:text-white">
+              {n.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <Button className="hidden md:inline-flex bg-white text-slate-900 hover:bg-slate-200 rounded-2xl">Contact</Button>
+    </nav>
+  </div>
+);
+
+const Hero = () => (
+  <div id="home" className="relative overflow-hidden">
+    <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-900/10 via-slate-950 to-slate-950" />
+    <section className="max-w-6xl mx-auto px-4 md:px-8 py-24">
+      <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-6xl font-semibold text-white tracking-tight">
+        {content.hero.headline}
+      </motion.h1>
+      <p className="mt-4 text-lg text-slate-300 max-w-2xl">{content.hero.subhead}</p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Button size="lg" className="rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950">{content.hero.ctaPrimary}<ArrowRight className="ml-2 h-4 w-4" /></Button>
+        <Button variant="outline" size="lg" className="rounded-2xl border-slate-700 text-slate-200">{content.hero.ctaSecondary}</Button>
+      </div>
+      <div className="mt-14">
+        <p className="text-xs uppercase tracking-widest text-slate-400">Trusted materials & methods</p>
+        <div className="mt-3 flex flex-wrap items-center gap-6 opacity-70 text-slate-400">
+          <span>Sunbrella®</span><span>Strataglass®</span><span>Barrett</span><span>Gore® Tenara®</span>
+        </div>
+      </div>
+    </section>
+  </div>
+);
+
+const Products = () => (
+  <Section id="products" title="Products" intro={content.productsIntro}>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {content.products.map((p) => (
+        <Card key={p.title} className="rounded-2xl bg-slate-900/60 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-slate-100">{p.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-slate-300">
+              {p.points.map((t: string, i: number) => (
+                <li key={i} className="flex items-start gap-2"><Check className="h-4 w-4 mt-1" /> {t}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </Section>
+);
+
+const Materials = () => (
+  <Section id="materials" title="Materials" intro={content.materials.intro}>
+    <div className="grid md:grid-cols-2 gap-8 items-start">
+      <ul className="space-y-3 text-slate-300">
+        {content.materials.bullets.map((b, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm"><Check className="h-4 w-4 mt-1" /> {b}</li>
+        ))}
+      </ul>
+      <div className="space-y-2">
+        {content.materials.links.map((l) => (
+          <a key={l.href} href={l.href} className="block text-sm text-sky-400 hover:underline" target="_blank" rel="noreferrer">
+            {l.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  </Section>
+);
+
+const About = () => (
+  <Section id="about" title="About Us">
+    <div className="grid md:grid-cols-2 gap-8 items-start">
+      <p className="text-slate-300 leading-relaxed">{content.about.blurb}</p>
+      <ul className="space-y-3 text-slate-300">
+        {content.about.stats.map((s, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm"><Check className="h-4 w-4 mt-1" /> {s}</li>
+        ))}
+      </ul>
+    </div>
+  </Section>
+);
+
+const Events = () => (
+  <Section id="events" title="Events" intro={content.events.lead}>
+    <div className="grid md:grid-cols-2 gap-6">
+      {content.events.items.map((e) => (
+        <Card key={e.title} className="rounded-2xl bg-slate-900/60 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-slate-200">{e.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-slate-400">{e.date}</div>
+            <a href={e.href} className="inline-flex mt-3 text-sky-400 hover:underline text-sm">{e.cta}</a>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </Section>
+);
+
+const Contact = () => (
+  <Section id="contact" title="Contact" intro={content.contact.promise}>
+    <Card className="rounded-2xl bg-slate-900/60 border-slate-800">
+      <CardContent className="pt-6">
+        <form className="grid md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium text-slate-200">Email</label>
+            <div className="mt-2 flex gap-2">
+              <Input placeholder="you@example.com" type="email" className="bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500" />
+              <Button type="button" className="bg-sky-500 hover:bg-sky-400 text-slate-950"><Mail className="h-4 w-4 mr-2" /> Notify Me</Button>
+            </div>
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium text-slate-200">Message</label>
+            <Textarea className="mt-2 bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500" rows={5} placeholder="Boat model, enclosure type, timeline, storage options…" />
+          </div>
+          <div className="md:col-span-2">
+            <Button className="w-full bg-white text-slate-900 hover:bg-slate-200">Send</Button>
+          </div>
+        </form>
+        <div className="mt-6 text-slate-400 text-sm">Prefer email? <a className="text-sky-400 hover:underline" href={`mailto:${content.contact.email}`}>{content.contact.email}</a></div>
+      </CardContent>
+    </Card>
+  </Section>
+);
+
+const Footer = () => (
+  <footer className="border-t border-slate-800 mt-16 bg-slate-950">
+    <div className="max-w-6xl mx-auto px-4 md:px-8 py-10 text-sm text-slate-400">
+      {content.footer}
+    </div>
+  </footer>
+);
+
+export default function KTMCanvasDark() {
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <NavBar />
+      <Hero />
+      <Products />
+      <Materials />
+      <About />
+      <Events />
+      <Contact />
+      <Footer />
+    </div>
+  );
+}
