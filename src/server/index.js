@@ -139,7 +139,7 @@ async function processWebsite(jobId, website, email, theme, businessType, maxPag
           // Send to ChatGPT
           console.log(`Sending page ${i + 1} of ${pagesToProcess.length} to ChatGPT...`);
           const completion = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: "gpt-4o",
             messages: [
               {
                 role: "system",
@@ -723,7 +723,7 @@ ${siteText}`;
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o",              // Using gpt-4o for better compatibility
+        model: "gpt-4o",               // Using gpt-4o for best performance
         temperature: 0.2,
         stream: true,                // enable streaming
         messages: [
