@@ -9,6 +9,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'node-fetch';
+import { AIWebsiteDesigner } from '../services/aiWebsiteDesigner.js';
 
 dotenv.config();
 
@@ -1073,6 +1074,48 @@ app.post('/api/setup-database', async (req, res) => {
   }
 });
 
+// AI Website Designer endpoint using the improved prompt
+app.post('/api/ai-design', async (req, res) => {
+  try {
+    console.log('Starting AI website design generation...');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
+    const { 
+      logoName, 
+      currentSiteUrl, 
+      businessType, 
+      themes, 
+      pages, 
+      city, 
+      region 
+    } = req.body;
+    
+    if (!businessType) {
+      return res.status(400).json({ error: 'Business type is required' });
+    }
+    
+    const jobId = uuidv4();
+    
+    // Store job in database
+    await pool.query(
+      'INSERT INTO jobs (id, website, business_type, status, job_type) VALUES ($1, $2, $3, $4, $5)',
+      [jobId, currentSiteUrl || 'N/A', businessType, 'generating', 'ai-design']
+    );
+    
+    // Start the AI design process asynchronously
+    generateAIDesign(jobId, { logoName, currentSiteUrl, businessType, themes, pages, city, region });
+    
+    res.json({ 
+      message: 'AI website design generation started', 
+      jobId 
+    });
+    
+  } catch (error) {
+    console.error('Error in /api/ai-design:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Add this after your other endpoints
 app.get('/demo/:id', async (req, res) => {
   try {
@@ -1427,6 +1470,64 @@ function estimateBusinessType($) {
   if (text.includes('retail') || text.includes('shop') || text.includes('store')) return 'retail-store';
   
   return 'local-business';
+}
+
+// AI Website Design generation function
+async function generateAIDesign(jobId, designRequest) {
+  try {
+    console.log(`\nStarting AI website design generation for job ${jobId}`);
+    console.log('Design request:', designRequest);
+    
+    // Update status to generating
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      ['generating', jobId]
+    );
+    
+    // Initialize AI Website Designer
+    const aiDesigner = new AIWebsiteDesigner(process.env.OPENAI_API_KEY);
+    
+    // Generate designs using the improved prompt
+    console.log('Generating website designs with AI...');
+    const result = await aiDesigner.generateWebsiteDesigns(designRequest);
+    
+    console.log('AI designs generated successfully');
+    console.log(`Output directory: ${result.outputDirectory}`);
+    console.log(`Concepts generated: ${result.concepts.length}`);
+    
+    // Store the results in the database
+    await pool.query(
+      'UPDATE jobs SET status = $1, demo_urls = $2 WHERE id = $3',
+      ['completed', JSON.stringify(result.concepts.map(c => c.demoUrl)), jobId]
+    );
+    
+    // Store additional metadata
+    const metadata = {
+      outputDirectory: result.outputDirectory,
+      concepts: result.concepts.map(c => ({
+        conceptNumber: c.conceptNumber,
+        conceptName: c.conceptName,
+        directory: c.directory,
+        htmlFile: c.htmlFile,
+        previewFile: c.previewFile
+      }))
+    };
+    
+    await pool.query(
+      'UPDATE jobs SET chatgpt_prompts = $1 WHERE id = $2',
+      [JSON.stringify(metadata), jobId]
+    );
+    
+    console.log(`AI website design generation completed successfully for job ${jobId}!`);
+    
+  } catch (error) {
+    console.error(`Error generating AI website design for job ${jobId}:`, error);
+    
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      [`error: ${error.message}`, jobId]
+    );
+  }
 }
 
 // Helper function to suggest themes based on content
