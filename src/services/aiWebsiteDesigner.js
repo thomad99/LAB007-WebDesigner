@@ -30,6 +30,13 @@ export class AIWebsiteDesigner {
       // Try to parse the JSON response
       try {
         const designs = JSON.parse(response);
+        
+        // Generate images based on the design concepts if OpenAI API key is available
+        if (this.openai.apiKey) {
+          console.log('Generating images for design concepts...');
+          await this.generateImagesForDesigns(designs, designRequest);
+        }
+        
         return this.processDesigns(designs, designRequest);
       } catch (parseError) {
         console.error('Failed to parse OpenAI response as JSON:', parseError);
@@ -38,6 +45,13 @@ export class AIWebsiteDesigner {
         if (jsonMatch) {
           try {
             const designs = JSON.parse(jsonMatch[0]);
+            
+            // Generate images based on the design concepts if OpenAI API key is available
+            if (this.openai.apiKey) {
+              console.log('Generating images for design concepts...');
+              await this.generateImagesForDesigns(designs, designRequest);
+            }
+            
             return this.processDesigns(designs, designRequest);
           } catch (fallbackError) {
             console.error('Fallback JSON parsing failed:', fallbackError);
@@ -127,6 +141,86 @@ Return a top-level JSON object with:
 IMPORTANT: Return ONLY valid JSON. Do not include any explanatory text before or after the JSON.`;
   }
 
+  async generateImagesForDesigns(designs, designRequest) {
+    try {
+      console.log('Generating images for design concepts...');
+      
+      for (let i = 0; i < designs.concepts.length; i++) {
+        const concept = designs.concepts[i];
+        console.log(`Generating images for concept ${i + 1}: ${concept.design_summary?.Concept_Name || `Concept ${i + 1}`}`);
+        
+        // Generate images based on the concept's image requests
+        if (concept.image_requests && concept.image_requests.length > 0) {
+          const generatedImages = [];
+          
+          for (const imageRequest of concept.image_requests.slice(0, 3)) { // Limit to 3 images per concept
+            try {
+              console.log(`Generating image: ${imageRequest.prompt || 'Custom prompt'}`);
+              
+              const image = await this.openai.images.generate({
+                model: "dall-e-3",
+                prompt: imageRequest.prompt || this.buildDefaultImagePrompt(concept, designRequest),
+                size: imageRequest.size || "1024x1024",
+                quality: "standard",
+                style: "natural"
+              });
+              
+              generatedImages.push({
+                type: imageRequest.type || 'custom',
+                prompt: imageRequest.prompt || this.buildDefaultImagePrompt(concept, designRequest),
+                url: image.data[0].url,
+                size: imageRequest.size || "1024x1024",
+                originalRequest: imageRequest
+              });
+              
+              console.log(`Image generated successfully for concept ${i + 1}`);
+              
+              // Add delay between requests to avoid rate limiting
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+            } catch (error) {
+              console.error(`Error generating image for concept ${i + 1}:`, error);
+            }
+          }
+          
+          // Store generated images in the concept
+          concept.generated_images = generatedImages;
+          console.log(`Generated ${generatedImages.length} images for concept ${i + 1}`);
+        }
+      }
+      
+      console.log('Image generation completed for all concepts');
+      
+    } catch (error) {
+      console.error('Error generating images for designs:', error);
+      // Don't throw error - continue with design processing even if images fail
+    }
+  }
+
+  buildDefaultImagePrompt(concept, designRequest) {
+    const conceptName = concept.design_summary?.Concept_Name || 'Modern Business';
+    const businessType = designRequest.businessType || 'business';
+    const theme = designRequest.themes || 'modern';
+    
+    return `Create a professional website image for a ${businessType} business with ${conceptName} design concept.
+    
+Business Context:
+- Business Type: ${businessType}
+- Design Concept: ${conceptName}
+- Theme: ${theme}
+
+Image Requirements:
+- Professional, high-quality business imagery
+- ${conceptName} aesthetic and style
+- Suitable for website use
+- Modern, clean design
+- No text overlays
+- Professional lighting and composition
+- Suitable for ${businessType} industry
+
+Style: Professional business photography, ${conceptName} aesthetic, clean composition`;
+  }
+
   async processDesigns(designs, designRequest) {
     try {
       // Create output directory
@@ -159,6 +253,21 @@ IMPORTANT: Return ONLY valid JSON. Do not include any explanatory text before or
         // Save accessibility notes
         const accessibilityPath = path.join(conceptDir, 'accessibility-notes.json');
         await fs.writeFile(accessibilityPath, JSON.stringify(concept.accessibility_notes, null, 2), 'utf8');
+
+        // Save generated images if they exist
+        if (concept.generated_images && concept.generated_images.length > 0) {
+          const imagesPath = path.join(conceptDir, 'generated-images.json');
+          await fs.writeFile(imagesPath, JSON.stringify(concept.generated_images, null, 2), 'utf8');
+          
+          // Create images directory and save image URLs
+          const imagesDir = path.join(conceptDir, 'images');
+          await fs.ensureDir(imagesDir);
+          
+          // Create an index file for the images
+          const imagesIndexPath = path.join(imagesDir, 'index.html');
+          const imagesIndexHtml = this.createImagesIndexPage(concept, i + 1);
+          await fs.writeFile(imagesIndexPath, imagesIndexHtml, 'utf8');
+        }
 
         // Create a preview file
         const previewPath = path.join(conceptDir, 'preview.html');
@@ -240,6 +349,56 @@ IMPORTANT: Return ONLY valid JSON. Do not include any explanatory text before or
 </html>`;
   }
 
+  createImagesIndexPage(concept, conceptNumber) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Images - ${concept.design_summary?.Concept_Name || `Concept ${conceptNumber}`}</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .concept-name { font-size: 2rem; margin: 0; color: #333; }
+        .back-link { display: inline-block; margin: 20px 0; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .images-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .image-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .image-card img { width: 100%; height: 200px; object-fit: cover; }
+        .image-info { padding: 15px; }
+        .image-type { font-size: 0.9rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .image-prompt { font-size: 0.8rem; color: #888; line-height: 1.4; }
+        .download-link { display: inline-block; margin-top: 10px; color: #007bff; text-decoration: none; font-size: 0.9rem; }
+        .download-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← Back to Concept</a>
+        
+        <div class="header">
+            <h1 class="concept-name">Generated Images</h1>
+            <p>AI-generated images for ${concept.design_summary?.Concept_Name || `Concept ${conceptNumber}`}</p>
+        </div>
+
+        <div class="images-grid">
+            ${concept.generated_images ? concept.generated_images.map(image => `
+                <div class="image-card">
+                    <img src="${image.url}" alt="AI Generated Image" loading="lazy">
+                    <div class="image-info">
+                        <div class="image-type">${image.type}</div>
+                        <div class="image-prompt">${image.prompt.substring(0, 100)}${image.prompt.length > 100 ? '...' : ''}</div>
+                        <a href="${image.url}" target="_blank" class="download-link">View Full Size</a>
+                    </div>
+                </div>
+            `).join('') : '<p>No images generated for this concept.</p>'}
+        </div>
+    </div>
+</body>
+</html>`;
+  }
+
   createIndexPage(concepts, designRequest) {
     return `<!DOCTYPE html>
 <html lang="en">
@@ -263,6 +422,7 @@ IMPORTANT: Return ONLY valid JSON. Do not include any explanatory text before or
         .btn-primary { background: #007bff; }
         .btn-secondary { background: #6c757d; }
         .btn:hover { opacity: 0.9; }
+        .btn-images { background: #28a745; }
     </style>
 </head>
 <body>
@@ -288,6 +448,10 @@ IMPORTANT: Return ONLY valid JSON. Do not include any explanatory text before or
                     <div class="concept-links">
                         <a href="${concept.conceptName.toLowerCase().replace(/\s+/g, '-')}/preview.html" class="btn btn-primary">Preview</a>
                         <a href="${concept.conceptName.toLowerCase().replace(/\s+/g, '-')}/index.html" class="btn btn-secondary">View HTML</a>
+                        ${concept.generated_images && concept.generated_images.length > 0 ? 
+                          `<a href="${concept.conceptName.toLowerCase().replace(/\s+/g, '-')}/images/index.html" class="btn btn-images">View Images</a>` : 
+                          ''
+                        }
                     </div>
                 </div>
             `).join('')}

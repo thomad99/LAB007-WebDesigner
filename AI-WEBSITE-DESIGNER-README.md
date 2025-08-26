@@ -5,6 +5,7 @@ This service uses OpenAI's GPT-4 to generate 3 distinct website redesign concept
 ## Features
 
 - **3 Distinct Design Concepts**: Each with unique visual direction and design tokens
+- **AI-Generated Images**: Content-aware image generation for hero, products, and backgrounds
 - **Complete HTML Output**: Single-file HTML with inline CSS (no external dependencies)
 - **Design Diversity**: Clean White Luxury, Dark Botanical, and Color Pop themes
 - **Accessibility Focused**: WCAG 2.2 AA compliance, keyboard navigation, focus states
@@ -47,6 +48,33 @@ OPENAI_API_KEY=your_openai_api_key_here
 }
 ```
 
+#### Endpoint: `POST /api/generate-content-images`
+
+Generate images based on website content analysis:
+
+**Request Body:**
+```json
+{
+  "website": "https://yourwebsite.com",
+  "businessType": "flower-shop",
+  "theme": "modern",
+  "contentAnalysis": {
+    "title": "Your Business",
+    "description": "Business description",
+    "headings": ["Main Heading", "Service 1", "Service 2"],
+    "mainContent": ["Content paragraph 1", "Content paragraph 2"]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Content-based image generation started",
+  "jobId": "uuid-here"
+}
+```
+
 ### 3. Check Status
 
 #### Endpoint: `GET /api/status/:jobId`
@@ -82,8 +110,11 @@ output/ai-designs/[timestamp]/
 │   ├── preview.html             # Preview page with iframe
 │   ├── design-summary.json      # Design concept details
 │   ├── image-requests.json      # AI image generation prompts
+│   ├── generated-images.json    # Generated image URLs and metadata
 │   ├── seo-meta.json           # SEO and meta information
-│   └── accessibility-notes.json # Accessibility features
+│   ├── accessibility-notes.json # Accessibility features
+│   └── images/                  # Generated images directory
+│       └── index.html           # Images gallery page
 ├── concept-2/
 │   └── [same structure]
 └── concept-3/
@@ -101,11 +132,16 @@ output/ai-designs/[timestamp]/
 - Type Pairing (Headings/Body with fallbacks)
 - Design Tokens (JSON + CSS :root variables)
 
-### 2. Image Requests
+### 2. Image Requests & Generated Images
 - 3-5 AI image generation prompts
 - Tailored to brand and concept
 - Include size/aspect ratios, style, lighting
 - Negative cues for better results
+- **AI-Generated Images**: Automatically generated based on content
+  - Hero images (1792×1024)
+  - Product/service images (1024×1024)
+  - Background textures (1024×1024)
+  - Content-aware prompts based on business type and theme
 
 ### 3. SEO + Meta
 - Title, meta description
@@ -131,10 +167,14 @@ output/ai-designs/[timestamp]/
 
 ## Testing
 
-Run the test script to see the service in action:
+Run the test scripts to see the service in action:
 
 ```bash
+# Test basic AI website design
 node test-ai-designer.js
+
+# Test image generation functionality
+node test-image-generation.js
 ```
 
 ## Integration Examples
@@ -142,7 +182,7 @@ node test-ai-designer.js
 ### Frontend Integration
 
 ```javascript
-// Generate website designs
+// Generate website designs with images
 const response = await fetch('/api/ai-design', {
   method: 'POST',
   headers: {
@@ -166,8 +206,29 @@ const statusResponse = await fetch(`/api/status/${jobId}`);
 const status = await statusResponse.json();
 
 if (status.status === 'completed') {
-  console.log('Designs ready!', status);
+  console.log('Designs with images ready!', status);
 }
+
+// Generate content-based images only
+const imageResponse = await fetch('/api/generate-content-images', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    website: 'https://mybusiness.com',
+    businessType: 'restaurant',
+    theme: 'modern',
+    contentAnalysis: {
+      title: 'My Restaurant',
+      description: 'Fine dining experience',
+      headings: ['Welcome', 'Our Menu', 'About Us'],
+      mainContent: ['Delicious food', 'Great service', 'Cozy atmosphere']
+    }
+  })
+});
+
+const { jobId: imageJobId } = await imageResponse.json();
 ```
 
 ### Direct Service Usage

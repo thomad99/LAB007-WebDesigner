@@ -691,15 +691,15 @@ app.post('/api/create-mockup', async (req, res) => {
   }
 });
 
-// Add new endpoint for Remix v2 (streaming approach)
+// Add new endpoint for Remix v2 (streaming approach) with image generation
 app.post('/api/remix-v2', async (req, res) => {
   try {
-    console.log('Starting Remix v2 process...');
+    console.log('Starting Remix v2 process with image generation...');
     const { sourceUrl, siteText, theme = "dark", styleNotes = "" } = req.body;
     
     console.log('Remix v2 request:', { sourceUrl, theme, styleNotes, textLength: siteText?.length || 0 });
     
-    // Build the system + user prompt for v2
+    // Build the system + user prompt for v2 with image generation
     const userPrompt = `You are a senior front-end designer.
 Create a single-page HTML document with inline CSS (no frameworks).
 Theme: ${theme.toUpperCase()}. Style notes: ${styleNotes}
@@ -709,6 +709,8 @@ Requirements:
 - Paraphrase copy; preserve meaning, don't copy verbatim.
 - Strong contrast, accessible focus states, responsive layout.
 - Polished hero, nav, sections, and a simple contact form (no external posts).
+- Include placeholder images with descriptive alt text for key content areas.
+- Generate image prompts for hero, product/service images, and background elements.
 - No external fonts/scripts/images. Use only HTML + <style>.
 - Output ONLY the final HTML.
 
@@ -1116,6 +1118,38 @@ app.post('/api/ai-design', async (req, res) => {
   }
 });
 
+// Generate images based on website content
+app.post('/api/generate-content-images', async (req, res) => {
+  try {
+    console.log('Starting content-based image generation...');
+    const { website, businessType, theme, contentAnalysis } = req.body;
+    
+    if (!website || !businessType) {
+      return res.status(400).json({ error: 'Website URL and business type are required' });
+    }
+    
+    const jobId = uuidv4();
+    
+    // Store job in database
+    await pool.query(
+      'INSERT INTO jobs (id, website, business_type, status, job_type) VALUES ($1, $2, $3, $4, $5)',
+      [jobId, website, businessType, 'generating_images', 'content-images']
+    );
+    
+    // Start the image generation process asynchronously
+    generateContentImages(jobId, { website, businessType, theme, contentAnalysis });
+    
+    res.json({ 
+      message: 'Content-based image generation started', 
+      jobId 
+    });
+    
+  } catch (error) {
+    console.error('Error in /api/generate-content-images:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Add this after your other endpoints
 app.get('/demo/:id', async (req, res) => {
   try {
@@ -1470,6 +1504,226 @@ function estimateBusinessType($) {
   if (text.includes('retail') || text.includes('shop') || text.includes('store')) return 'retail-store';
   
   return 'local-business';
+}
+
+// Generate images based on website content
+async function generateContentImages(jobId, imageRequest) {
+  try {
+    console.log(`\nStarting content-based image generation for job ${jobId}`);
+    console.log('Image request:', imageRequest);
+    
+    // Update status to generating images
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      ['generating_images', jobId]
+    );
+    
+    // Analyze website content to determine what images to generate
+    const { website, businessType, theme, contentAnalysis } = imageRequest;
+    
+    // If no content analysis provided, analyze the website
+    let content = contentAnalysis;
+    if (!content) {
+      console.log('Analyzing website content for image generation...');
+      const { data } = await axios.get(website);
+      const $ = cheerio.load(data);
+      
+      content = {
+        title: $('title').text().trim(),
+        description: $('meta[name="description"]').attr('content') || '',
+        headings: $('h1, h2, h3').map((i, el) => $(el).text().trim()).get().slice(0, 5),
+        mainContent: $('p').map((i, el) => $(el).text().trim()).get().filter(text => text.length > 20).slice(0, 3),
+        navigation: extractNavigation($),
+        contactInfo: extractContactInfo($),
+        socialLinks: extractSocialLinks($)
+      };
+    }
+    
+    console.log('Content analysis for image generation:', content);
+    
+    // Generate different types of images based on content
+    const imagePrompts = buildImagePrompts(content, businessType, theme);
+    const generatedImages = [];
+    
+    // Generate hero image
+    if (imagePrompts.hero) {
+      console.log('Generating hero image...');
+      try {
+        const heroImage = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: imagePrompts.hero,
+          size: "1792x1024",
+          quality: "standard",
+          style: "natural"
+        });
+        
+        generatedImages.push({
+          type: 'hero',
+          prompt: imagePrompts.hero,
+          url: heroImage.data[0].url,
+          size: "1792x1024"
+        });
+        
+        console.log('Hero image generated successfully');
+      } catch (error) {
+        console.error('Error generating hero image:', error);
+      }
+    }
+    
+    // Generate product/service images
+    if (imagePrompts.products && imagePrompts.products.length > 0) {
+      console.log('Generating product/service images...');
+      for (let i = 0; i < Math.min(imagePrompts.products.length, 3); i++) {
+        try {
+          const productImage = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: imagePrompts.products[i],
+            size: "1024x1024",
+            quality: "standard",
+            style: "natural"
+          });
+          
+          generatedImages.push({
+            type: 'product',
+            prompt: imagePrompts.products[i],
+            url: productImage.data[0].url,
+            size: "1024x1024"
+          });
+          
+          console.log(`Product image ${i + 1} generated successfully`);
+          
+          // Add delay between requests
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error(`Error generating product image ${i + 1}:`, error);
+        }
+      }
+    }
+    
+    // Generate background/texture images
+    if (imagePrompts.backgrounds && imagePrompts.backgrounds.length > 0) {
+      console.log('Generating background images...');
+      for (let i = 0; i < Math.min(imagePrompts.backgrounds.length, 2); i++) {
+        try {
+          const bgImage = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: imagePrompts.backgrounds[i],
+            size: "1024x1024",
+            quality: "standard",
+            style: "natural"
+          });
+          
+          generatedImages.push({
+            type: 'background',
+            prompt: imagePrompts.backgrounds[i],
+            url: bgImage.data[0].url,
+            size: "1024x1024"
+          });
+          
+          console.log(`Background image ${i + 1} generated successfully`);
+          
+          // Add delay between requests
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error(`Error generating background image ${i + 1}:`, error);
+        }
+      }
+    }
+    
+    // Store the results
+    console.log('Storing generated images...');
+    const metadata = {
+      generatedImages,
+      imagePrompts,
+      contentAnalysis: content
+    };
+    
+    await pool.query(
+      'UPDATE jobs SET status = $1, chatgpt_prompts = $2 WHERE id = $3',
+      ['completed', JSON.stringify(metadata), jobId]
+    );
+    
+    console.log(`Content-based image generation completed successfully for job ${jobId}!`);
+    console.log(`Generated ${generatedImages.length} images`);
+    
+  } catch (error) {
+    console.error(`Error generating content-based images for job ${jobId}:`, error);
+    
+    await pool.query(
+      'UPDATE jobs SET status = $1 WHERE id = $2',
+      [`error: ${error.message}`, jobId]
+    );
+  }
+}
+
+// Build image prompts based on content analysis
+function buildImagePrompts(content, businessType, theme) {
+  const prompts = {
+    hero: null,
+    products: [],
+    backgrounds: []
+  };
+  
+  // Hero image prompt
+  const heroContext = content.headings?.[0] || content.title || businessType;
+  prompts.hero = `Create a professional hero image for a ${businessType} business website.
+    
+Business Context:
+- Business Type: ${businessType}
+- Main Heading: ${heroContext}
+- Description: ${content.description || 'Professional business services'}
+- Theme: ${theme || 'modern'}
+
+Image Requirements:
+- Professional, high-quality business imagery
+- ${theme} color scheme and aesthetic
+- Suitable for website hero section
+- Modern, clean design
+- No text overlays
+- Professional lighting and composition
+- Suitable for ${businessType} industry
+
+Style: Professional business photography, modern aesthetic, clean composition`;
+
+  // Product/service image prompts
+  if (content.headings && content.headings.length > 1) {
+    content.headings.slice(1, 4).forEach((heading, index) => {
+      const productPrompt = `Create a professional product/service image for a ${businessType} business.
+      
+Service/Product: ${heading}
+Business Type: ${businessType}
+Theme: ${theme || 'modern'}
+
+Image Requirements:
+- Professional representation of ${heading}
+- ${theme} aesthetic and color scheme
+- Clean, modern composition
+- Suitable for website product/service section
+- No text overlays
+- Professional lighting and styling
+
+Style: Professional product photography, modern aesthetic, clean design`;
+      
+      prompts.products.push(productPrompt);
+    });
+  }
+  
+  // Background/texture image prompts
+  const backgroundPrompts = [
+    `Create a subtle background texture for a ${businessType} website.
+Theme: ${theme || 'modern'}
+Style: Subtle, professional, not distracting
+Use: Website background or section dividers`,
+    
+    `Create a decorative background element for a ${businessType} website.
+Theme: ${theme || 'modern'}
+Style: Modern, geometric, professional
+Use: Section backgrounds or decorative elements`
+  ];
+  
+  prompts.backgrounds = backgroundPrompts;
+  
+  return prompts;
 }
 
 // AI Website Design generation function
